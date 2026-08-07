@@ -24,8 +24,8 @@
       <section class="controls" aria-label="Calendar filters / Filtres du calendrier">
         <div class="search-row">
           <div class="field">
-            <label for="searchInput" data-i18n="searchLabel">Rechercher</label>
-            <input id="searchInput" type="search" autocomplete="off" placeholder="Jeu, activité ou lieu…" data-i18n-placeholder="searchPlaceholder" />
+            <label for="categorySelect" data-i18n="categoryLabel">Catégorie de jeu</label>
+            <select id="categorySelect"></select>
           </div>
           <div class="field">
             <label for="citySelect" data-i18n="cityLabel">Ville</label>
@@ -58,6 +58,7 @@
   </main>
 
   <script src="i18n.js"></script>
+  <script src="game-categories.js"></script>
   <script src="demo.js"></script>
   <script src="render.js"></script>
   <script src="script.js"></script>
