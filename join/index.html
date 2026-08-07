@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Participer — Jouer pour de bon</title>
+  <link rel="stylesheet" href="styles.css?v=20260806-2214" />
+</head>
+<body>
+  <main class="page-shell">
+    <section class="join-card">
+      <div class="top-bar">
+        <div><p class="eyebrow" data-i18n="eyebrow">Jouer pour de bon</p><h1 data-i18n="title">Participer</h1></div>
+        <div class="language-toggle"><button class="language-button active" data-lang="fr">FR</button><button class="language-button" data-lang="en">EN</button></div>
+      </div>
+      <div id="eventSummary" class="event-summary"></div>
+      <form id="joinForm">
+        <label class="field"><span data-i18n="causeLabel">Cause pour laquelle vous jouez *</span><input id="causeInput" required maxlength="160" placeholder="Amis de la terre" /></label>
+        <p class="helper" data-i18n="accountNote">Vous devrez être connecté à votre compte de joueur pour confirmer l’inscription.</p>
+        <div id="joinMessage" class="message" hidden></div>
+        <button class="primary-button" type="submit" data-i18n="joinButton">Participer à cette activité</button>
+      </form>
+    </section>
+  </main>
+  <script src="script.js?v=20260806-2214"></script>
+</body>
+</html>
