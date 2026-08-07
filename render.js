@@ -26,19 +26,56 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
     const h=document.createElement("h3"); h.className="event-title"; h.textContent=e.title||""; c.append(h);
     const meta=document.createElement("div"); meta.className="event-meta";
     meta.textContent=[e.venue,e.city].filter(Boolean).join(" · ")||t("locationFallback"); c.append(meta);
+
     if(Array.isArray(e.games)){
       const tags=document.createElement("div"); tags.className="game-tags";
       e.games.forEach(g=>{ const x=document.createElement("span"); x.className="game-tag"; x.textContent=g; tags.append(x); });
       c.append(tags);
     }
+
+    const facts=document.createElement("div"); facts.className="event-facts";
+    facts.append(fact(`${Number(e.participantsCount)||0} ${t("players")}`));
+    if(e.maxParticipants!==null&&e.maxParticipants!==undefined&&e.spotsLeft!==null&&e.spotsLeft!==undefined){
+      facts.append(fact(`${Math.max(0,Number(e.spotsLeft)||0)} ${t("spotsLeft")}`, Number(e.spotsLeft)===0));
+    }
+    facts.append(fact(`${t("ageGroup")}: ${ageLabel(e)}`));
+    c.append(facts);
+
     let d=null;
     if(e.description){
       const b=document.createElement("button"); b.className="details-button"; b.type="button"; b.textContent=`${t("details")} ↓`; c.append(b);
       d=document.createElement("div"); d.className="event-details"; const p=document.createElement("p"); p.textContent=e.description; d.append(p);
       b.onclick=()=>{ const open=d.classList.toggle("open"); b.textContent=`${open?t("hideDetails"):t("details")} ${open?"↑":"↓"}`; };
     }
+
+    if(e.competitionId){
+      const actions=document.createElement("div"); actions.className="event-actions";
+      if(e.registrationOpen&&(e.spotsLeft===null||e.spotsLeft===undefined||Number(e.spotsLeft)>0)){
+        const join=document.createElement("a"); join.className="join-button";
+        join.href=`join/?event=${encodeURIComponent(e.id)}&competition=${encodeURIComponent(e.competitionId)}`;
+        join.textContent=t("join"); actions.append(join);
+      } else {
+        const closed=document.createElement("span"); closed.className="join-button disabled";
+        closed.textContent=Number(e.spotsLeft)===0?t("full"):t("registrationClosed"); actions.append(closed);
+      }
+      c.append(actions);
+    }
+
     const badge=document.createElement("span"); badge.className="event-status"; badge.textContent=t("scheduled");
     m.append(tm,c,badge); a.append(m); if(d)a.append(d); return a;
+  }
+
+  function fact(text,alert=false){
+    const x=document.createElement("span"); x.className=`event-fact${alert?" alert":""}`; x.textContent=text; return x;
+  }
+
+  function ageLabel(e){
+    const min=e.minAge===null||e.minAge===undefined?null:Number(e.minAge);
+    const max=e.maxAge===null||e.maxAge===undefined?null:Number(e.maxAge);
+    if(min===null&&max===null)return t("allAges");
+    if(min!==null&&max!==null)return t("ageRange").replace("{min}",min).replace("{max}",max);
+    if(min!==null)return t("agePlus").replace("{min}",min);
+    return t("ageUpTo").replace("{max}",max);
   }
 
   function cityGame(e){
