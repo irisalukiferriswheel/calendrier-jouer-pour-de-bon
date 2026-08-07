@@ -1,18 +1,10 @@
 # Calendrier — Jouer pour de bon / Calendar — Playing for Good
 
-Standalone bilingual game calendar and registration UI for embedding in the Wix site.
+Standalone bilingual event calendar plus organizer and Join pages for embedding in the Wix site.
 
-## Live pages
+## Public calendar
 
-- Calendar: `/`
-- Organizer form prototype: `/organizer/`
-- Player Join page: `/join/?event=EVENT_ID&competition=COMPETITION_ID`
-
-GitHub Pages base URL:
-
-`https://irisalukiferriswheel.github.io/calendrier-jouer-pour-de-bon/`
-
-## Calendar features
+The root page provides:
 
 - FR / EN interface toggle, remembered in the visitor's browser
 - Free-text search by title, game, city, venue, or description
@@ -22,50 +14,74 @@ GitHub Pages base URL:
 - Chronological results grouped by day
 - Responsive layout for desktop and mobile
 - Expandable event descriptions
-- Player count, spots remaining, and age group
-- Join button only when registration is open and capacity remains
-- API-driven through the shared Jouer pour de bon backend
+- Number of confirmed players
+- Number of spots left
+- Age group
+- Join button when registration is open and capacity remains
 
-## Organizer form prototype
+## Organizer page
 
-The organizer page prepares the fields needed by the calendar and registration system:
+`/organizer/`
 
-- activity title and game
-- description
-- date, start/end time, and timezone
-- city, country, venue, and address
-- maximum participants
-- required age-group selection (all ages, youth, 18+, or custom range)
-- fee and currency
-- draft vs publish/open-registration state
+Required organizer fields currently include:
 
-The page currently validates and previews the backend-shaped payload. Real publishing remains disabled until organizer authentication is connected.
+- activity name
+- game
+- date, start time, end time, and timezone
+- city, country, and venue
+- maximum number of players
+- age group (all ages, under 18, 18+, or a custom min/max range)
+- cost per player and currency
+- publication choice: draft or publish/open registration
+
+Optional fields include description and street address.
+
+The form previews the resulting activity locally. When it is opened with a configured API address and an organizer access token is available in browser storage, it can call `POST /v1/organizer/activities`, which creates the competition and its linked calendar event together.
 
 ## Join page
 
-The Join page receives the calendar event and competition IDs, collects the player's cause, and is prepared to submit to `POST /v1/registrations` when an authenticated player API token is available. Demo mode does not create fake registrations.
+`/join/?event=EVENT_ID&competition=COMPETITION_ID`
 
-## Data flow
+The Join page:
 
-`Organizer -> competition + linked event -> Supabase/API -> calendar -> Join -> registration`
+- loads public event availability without requiring login
+- shows participant count, spots left, age group, and fee
+- disables joining when the activity is full or registration is closed
+- asks which cause the player is playing for
+- requires a player access token only for the actual `POST /v1/registrations` call
 
-The live API contract expected by the calendar is:
+## API data flow
+
+`Supabase -> jouer-pour-de-bon-api -> calendar / organizer / Join pages -> Wix`
+
+Expected API routes:
 
 - `GET /v1/events/filters`
 - `GET /v1/events?city=...&game=...&from=...`
+- `GET /v1/calendar/events/:id`
+- `POST /v1/organizer/activities`
+- `POST /v1/registrations`
 
-The API draft PR extends event responses with capacity and registration availability fields.
+## Capacity model
 
-## Current preview mode
+The public calendar distinguishes:
 
-The shared API does not yet have a permanent public HTTPS deployment URL. Until it does, the calendar displays clearly marked demo events so design, filters, capacity display, and Join states can be previewed safely.
+- `participantsCount`: confirmed registrations
+- `reservedCount`: confirmed + pending-payment registrations
+- `spotsLeft`: maximum capacity minus reserved registrations
 
-Once the API is deployed, append the API address while testing:
+Pending-payment registrations reserve a spot, which prevents the final place from being sold twice while checkout is in progress. The backend feature branch also contains a Supabase trigger intended to enforce this at the database layer.
+
+## Preview mode
+
+Until the shared API has a permanent public HTTPS deployment URL, the calendar shows three clearly marked demo events. The organizer and Join pages also remain safe previews unless an API address and authenticated token are available.
+
+For API testing, append the API address to a page URL:
 
 `?api=https://YOUR-API-HOST`
 
-The same API address can later be made the default in `script.js`.
+No Supabase service-role key belongs in this static repository.
 
 ## Deployment
 
-This repository is published with GitHub Pages and is intended to be embedded in Wix as an external website/HTML frame.
+This repository is published with GitHub Pages and can be embedded in Wix as an external website/HTML frame.
