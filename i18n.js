@@ -2,7 +2,7 @@ window.JPDB_CALENDAR_I18N = {
   fr: {
     eyebrow: "Jouer pour de bon", title: "Calendrier",
     intro: "Trouvez les jeux et activités à venir près de chez vous.",
-    categoryLabel: "Catégorie de jeu", allCategories: "Toutes les catégories",
+    searchLabel: "Rechercher", searchPlaceholder: "Jeu, activité ou lieu…",
     cityLabel: "Ville", gameLabel: "Jeu", allCities: "Toutes les villes", allGames: "Tous les jeux",
     allDates: "Toutes les dates", thisWeek: "Cette semaine", thisWeekend: "Ce week-end",
     reset: "Réinitialiser", loading: "Chargement du calendrier…",
@@ -15,7 +15,7 @@ window.JPDB_CALENDAR_I18N = {
   en: {
     eyebrow: "Playing for Good", title: "Calendar",
     intro: "Find upcoming games and activities near you.",
-    categoryLabel: "Game category", allCategories: "All categories",
+    searchLabel: "Search", searchPlaceholder: "Game, activity or place…",
     cityLabel: "City", gameLabel: "Game", allCities: "All cities", allGames: "All games",
     allDates: "All dates", thisWeek: "This week", thisWeekend: "This weekend",
     reset: "Reset", loading: "Loading calendar…",
