@@ -1,6 +1,9 @@
 (() => {
   "use strict";
 
+  const query = new URLSearchParams(location.search);
+  const api = (query.get("api") || "").replace(/\/$/, "");
+
   const I18N = {
     fr: {
       eyebrow:"Jouer pour de bon", title:"Organiser une partie", intro:"Créez une activité qui pourra apparaître dans le calendrier public.",
@@ -16,7 +19,10 @@
       previewEyebrow:"Aperçu", notPublished:"Non publié", connectionNote:"La connexion d’authentification de l’organisateur sera branchée avant la publication réelle.",
       invalidTime:"L’heure de fin doit être après l’heure de début.", invalidAge:"La plage d’âge n’est pas valide.", requiredAge:"Indiquez au moins un âge pour une plage personnalisée.",
       players:"joueurs maximum", allAges:"Tous âges", agePlus:"{min} ans et +", ageUpTo:"Jusqu’à {max} ans", ageRange:"{min}–{max} ans",
-      free:"Gratuit", draftPreview:"Brouillon", publicPreview:"Prêt à publier"
+      free:"Gratuit", draftPreview:"Brouillon", publicPreview:"Prêt à publier",
+      createButton:"Créer l’activité", creating:"Création…", created:"Activité créée avec succès.",
+      authNeeded:"La page est prête, mais l’API et la connexion organisateur doivent être actives pour créer réellement l’activité.",
+      createError:"Impossible de créer l’activité pour le moment.", openCalendar:"Voir le calendrier"
     },
     en: {
       eyebrow:"Playing for Good", title:"Organize a game", intro:"Create an activity that can appear in the public calendar.",
@@ -32,7 +38,10 @@
       previewEyebrow:"Preview", notPublished:"Not published", connectionNote:"Organizer authentication will be connected before real publishing is enabled.",
       invalidTime:"End time must be after start time.", invalidAge:"The age range is not valid.", requiredAge:"Enter at least one age for a custom range.",
       players:"players maximum", allAges:"All ages", agePlus:"Ages {min}+", ageUpTo:"Up to age {max}", ageRange:"Ages {min}–{max}",
-      free:"Free", draftPreview:"Draft", publicPreview:"Ready to publish"
+      free:"Free", draftPreview:"Draft", publicPreview:"Ready to publish",
+      createButton:"Create activity", creating:"Creating…", created:"Activity created successfully.",
+      authNeeded:"The page is ready, but the API and organizer sign-in must be active to create the activity for real.",
+      createError:"The activity could not be created right now.", openCalendar:"View calendar"
     }
   };
 
@@ -43,6 +52,9 @@
   const customAgeFields = $("customAgeFields");
   const errorBox = $("formError");
   const preview = $("previewSection");
+  let createButton = null;
+  let createMessage = null;
+  let calendarLink = null;
 
   init();
 
@@ -94,6 +106,8 @@
     document.querySelectorAll("[data-lang]").forEach(button => {
       button.classList.toggle("active", button.dataset.lang === lang);
     });
+    if (createButton) createButton.textContent = t("createButton");
+    if (calendarLink) calendarLink.textContent = t("openCalendar");
     if (!preview.hidden) renderPreview(window.JPDBOrganizerPreview);
   }
 
@@ -192,8 +206,106 @@
     [c.activityType, `${c.city} · ${c.locationName}`, `${c.maxParticipants} ${t("players")}`, age, price, c.visibility === "public" ? t("publicPreview") : t("draftPreview")]
       .forEach(value => { const span=document.createElement("span"); span.textContent=value; $("previewFacts").append(span); });
     $("previewDescription").textContent = c.description || "";
+    ensureCreateControls();
+    createMessage.hidden = true;
+    calendarLink.hidden = true;
+    createButton.disabled = false;
+    createButton.textContent = t("createButton");
     preview.hidden = false;
     preview.scrollIntoView({ behavior:"smooth", block:"nearest" });
+  }
+
+  function ensureCreateControls() {
+    if (createButton) return;
+    const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.gap = "12px";
+    actions.style.flexWrap = "wrap";
+    actions.style.marginTop = "16px";
+
+    createButton = document.createElement("button");
+    createButton.type = "button";
+    createButton.className = "primary-button";
+    createButton.textContent = t("createButton");
+    createButton.addEventListener("click", createActivity);
+
+    calendarLink = document.createElement("a");
+    calendarLink.className = "primary-button";
+    calendarLink.style.textDecoration = "none";
+    calendarLink.textContent = t("openCalendar");
+    calendarLink.hidden = true;
+
+    createMessage = document.createElement("p");
+    createMessage.className = "connection-note";
+    createMessage.hidden = true;
+
+    actions.append(createButton, calendarLink);
+    preview.append(createMessage, actions);
+  }
+
+  async function createActivity() {
+    const payload = window.JPDBOrganizerPreview;
+    if (!payload) return;
+
+    const token = localStorage.getItem("jpdb_api_token") || "";
+    if (!api || !token) {
+      createMessage.textContent = t("authNeeded");
+      createMessage.hidden = false;
+      return;
+    }
+
+    const c = payload.competition;
+    createButton.disabled = true;
+    createButton.textContent = t("creating");
+    createMessage.hidden = true;
+
+    try {
+      const response = await fetch(`${api}/v1/organizer/activities`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: c.title,
+          description: c.description,
+          game: c.activityType,
+          startAt: c.startAt,
+          endAt: c.endAt,
+          timezone: c.timezone,
+          city: c.city,
+          venue: c.locationName,
+          address: c.locationAddress,
+          country: c.country,
+          maxParticipants: c.maxParticipants,
+          minAge: c.minAge,
+          maxAge: c.maxAge,
+          feeAmount: c.feeAmount,
+          feeCurrency: c.feeCurrency,
+          publish: c.visibility === "public"
+        })
+      });
+
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(json.error || `HTTP ${response.status}`);
+
+      createMessage.textContent = t("created");
+      createMessage.hidden = false;
+      createButton.disabled = true;
+      createButton.textContent = t("created");
+
+      const params = new URLSearchParams();
+      if (api) params.set("api", api);
+      calendarLink.href = `../${params.toString() ? `?${params.toString()}` : ""}`;
+      calendarLink.hidden = false;
+    } catch (error) {
+      console.error(error);
+      createMessage.textContent = t("createError");
+      createMessage.hidden = false;
+      createButton.disabled = false;
+      createButton.textContent = t("createButton");
+    }
   }
 
   function formatAge(min,max) {
