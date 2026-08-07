@@ -10,7 +10,10 @@ window.JPDB_CALENDAR_I18N = {
     loadError: "Impossible de charger le calendrier pour le moment.",
     scheduled: "À venir", details: "Détails", hideDetails: "Masquer les détails",
     locationFallback: "Lieu à confirmer", oneResult: "1 activité trouvée",
-    manyResults: "{count} activités trouvées", demoMode: "Aperçu avec données de démonstration"
+    manyResults: "{count} activités trouvées", demoMode: "Aperçu avec données de démonstration",
+    players: "joueurs inscrits", spotsLeft: "places restantes", ageGroup: "Âge",
+    allAges: "Tous âges", agePlus: "{min} ans et +", ageUpTo: "Jusqu’à {max} ans", ageRange: "{min}–{max} ans",
+    join: "Participer", full: "Complet", registrationClosed: "Inscriptions fermées"
   },
   en: {
     eyebrow: "Playing for Good", title: "Calendar",
@@ -22,6 +25,9 @@ window.JPDB_CALENDAR_I18N = {
     noEvents: "No activities match your search.", loadError: "The calendar can’t be loaded right now.",
     scheduled: "Upcoming", details: "Details", hideDetails: "Hide details",
     locationFallback: "Location to be confirmed", oneResult: "1 activity found",
-    manyResults: "{count} activities found", demoMode: "Preview using demo data"
+    manyResults: "{count} activities found", demoMode: "Preview using demo data",
+    players: "players joined", spotsLeft: "spots left", ageGroup: "Age",
+    allAges: "All ages", agePlus: "Ages {min}+", ageUpTo: "Up to age {max}", ageRange: "Ages {min}–{max}",
+    join: "Join", full: "Full", registrationClosed: "Registration closed"
   }
 };
