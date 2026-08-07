@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Organiser une partie — Jouer pour de bon</title>
+  <link rel="stylesheet" href="styles.css?v=20260806-2214" />
+</head>
+<body>
+  <main class="page-shell">
+    <section class="form-card" aria-labelledby="pageTitle">
+      <div class="top-bar">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">Jouer pour de bon</p>
+          <h1 id="pageTitle" data-i18n="title">Organiser une partie</h1>
+          <p class="intro" data-i18n="intro">Créez une activité qui pourra apparaître dans le calendrier public.</p>
+        </div>
+        <div class="language-toggle" aria-label="Language / Langue">
+          <button class="language-button active" type="button" data-lang="fr">FR</button>
+          <button class="language-button" type="button" data-lang="en">EN</button>
+        </div>
+      </div>
+
+      <p class="required-note" data-i18n="requiredNote">Les champs marqués * sont obligatoires.</p>
+
+      <form id="organizerForm">
+        <fieldset>
+          <legend data-i18n="sectionGame">La partie</legend>
+          <div class="field-grid two">
+            <label class="field">
+              <span data-i18n="titleLabel">Nom de l’activité *</span>
+              <input id="titleInput" required maxlength="120" placeholder="Basketball Knockout" />
+            </label>
+            <label class="field">
+              <span data-i18n="gameLabel">Jeu *</span>
+              <input id="gameInput" required list="gameSuggestions" placeholder="Basketball" />
+              <datalist id="gameSuggestions">
+                <option value="Basketball"></option><option value="Échecs"></option><option value="Tetris"></option>
+                <option value="Soccer"></option><option value="Pickleball"></option><option value="Tennis"></option>
+              </datalist>
+            </label>
+          </div>
+          <label class="field">
+            <span data-i18n="descriptionLabel">Description</span>
+            <textarea id="descriptionInput" rows="4" maxlength="1200" data-i18n-placeholder="descriptionPlaceholder" placeholder="Décrivez le format, le niveau ou les informations utiles."></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend data-i18n="sectionSchedule">Date et heure</legend>
+          <div class="field-grid three">
+            <label class="field"><span data-i18n="dateLabel">Date *</span><input id="dateInput" type="date" required /></label>
+            <label class="field"><span data-i18n="startLabel">Début *</span><input id="startInput" type="time" required /></label>
+            <label class="field"><span data-i18n="endLabel">Fin *</span><input id="endInput" type="time" required /></label>
+          </div>
+          <label class="field compact">
+            <span data-i18n="timezoneLabel">Fuseau horaire *</span>
+            <select id="timezoneSelect" required>
+              <option value="America/Montreal">America/Montreal</option>
+              <option value="America/Toronto">America/Toronto</option>
+              <option value="America/Vancouver">America/Vancouver</option>
+              <option value="America/New_York">America/New_York</option>
+              <option value="Europe/London">Europe/London</option>
+              <option value="Europe/Paris">Europe/Paris</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend data-i18n="sectionLocation">Lieu</legend>
+          <div class="field-grid two">
+            <label class="field"><span data-i18n="cityLabel">Ville *</span><input id="cityInput" required placeholder="Sherbrooke" /></label>
+            <label class="field"><span data-i18n="countryLabel">Pays *</span><input id="countryInput" required value="CA" maxlength="2" /></label>
+          </div>
+          <div class="field-grid two">
+            <label class="field"><span data-i18n="venueLabel">Lieu / établissement *</span><input id="venueInput" required placeholder="Parc Jacques-Cartier" /></label>
+            <label class="field"><span data-i18n="addressLabel">Adresse</span><input id="addressInput" placeholder="123, rue Exemple" /></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend data-i18n="sectionParticipation">Participants</legend>
+          <div class="field-grid two">
+            <label class="field">
+              <span data-i18n="capacityLabel">Nombre maximum de joueurs *</span>
+              <input id="capacityInput" type="number" min="1" max="10000" step="1" required value="12" />
+            </label>
+            <label class="field">
+              <span data-i18n="ageGroupLabel">Groupe d’âge *</span>
+              <select id="ageGroupSelect" required>
+                <option value="all" data-i18n-option="ageAll">Tous âges</option>
+                <option value="youth" data-i18n-option="ageYouth">Moins de 18 ans</option>
+                <option value="adult" data-i18n-option="ageAdult">18 ans et plus</option>
+                <option value="custom" data-i18n-option="ageCustom">Âges personnalisés</option>
+              </select>
+            </label>
+          </div>
+          <div id="customAgeFields" class="field-grid two conditional" hidden>
+            <label class="field"><span data-i18n="minAgeLabel">Âge minimum</span><input id="minAgeInput" type="number" min="0" max="120" step="1" /></label>
+            <label class="field"><span data-i18n="maxAgeLabel">Âge maximum</span><input id="maxAgeInput" type="number" min="0" max="120" step="1" /></label>
+          </div>
+          <p class="helper" data-i18n="capacityHelp">Les places restantes seront calculées automatiquement à partir des inscriptions actives.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend data-i18n="sectionRegistration">Inscription</legend>
+          <div class="field-grid three">
+            <label class="field"><span data-i18n="feeLabel">Coût par joueur *</span><input id="feeInput" type="number" min="0" step="0.01" required value="0" /></label>
+            <label class="field"><span data-i18n="currencyLabel">Devise *</span><select id="currencySelect"><option>CAD</option><option>USD</option><option>EUR</option><option>GBP</option></select></label>
+            <label class="field"><span data-i18n="publishLabel">Publication *</span><select id="publishSelect"><option value="draft" data-i18n-option="draft">Brouillon</option><option value="published" data-i18n-option="publish">Publier et ouvrir les inscriptions</option></select></label>
+          </div>
+        </fieldset>
+
+        <div id="formError" class="error-box" hidden></div>
+        <button class="primary-button" type="submit" data-i18n="previewButton">Prévisualiser l’activité</button>
+      </form>
+
+      <section id="previewSection" class="preview" hidden>
+        <div class="preview-heading">
+          <div><p class="eyebrow" data-i18n="previewEyebrow">Aperçu</p><h2 id="previewTitle"></h2></div>
+          <span class="preview-badge" data-i18n="notPublished">Non publié</span>
+        </div>
+        <div id="previewFacts" class="preview-facts"></div>
+        <p id="previewDescription" class="preview-description"></p>
+        <p class="connection-note" data-i18n="connectionNote">La connexion d’authentification de l’organisateur sera branchée avant la publication réelle.</p>
+      </section>
+    </section>
+  </main>
+  <script src="script.js?v=20260806-2214"></script>
+</body>
+</html>
