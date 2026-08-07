@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calendrier — Jouer pour de bon</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="calendar-shell">
+    <section class="calendar-card" aria-labelledby="calendarTitle">
+      <div class="top-bar">
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">Jouer pour de bon</p>
+          <h1 id="calendarTitle" data-i18n="title">Calendrier</h1>
+          <p class="intro" data-i18n="intro">Trouvez les jeux et activités à venir près de chez vous.</p>
+        </div>
+        <div class="language-toggle" aria-label="Language / Langue">
+          <button class="language-button active" type="button" data-lang="fr" aria-pressed="true">FR</button>
+          <button class="language-button" type="button" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+
+      <section class="controls" aria-label="Calendar filters / Filtres du calendrier">
+        <div class="search-row">
+          <div class="field">
+            <label for="searchInput" data-i18n="searchLabel">Rechercher</label>
+            <input id="searchInput" type="search" autocomplete="off" placeholder="Jeu, activité ou lieu…" data-i18n-placeholder="searchPlaceholder" />
+          </div>
+          <div class="field">
+            <label for="citySelect" data-i18n="cityLabel">Ville</label>
+            <select id="citySelect"></select>
+          </div>
+          <div class="field">
+            <label for="gameSelect" data-i18n="gameLabel">Jeu</label>
+            <select id="gameSelect"></select>
+          </div>
+        </div>
+
+        <div class="date-row">
+          <div class="date-filters" role="group" aria-label="Date range / Période">
+            <button class="filter-chip active" type="button" data-range="all" data-i18n="allDates">Toutes les dates</button>
+            <button class="filter-chip" type="button" data-range="week" data-i18n="thisWeek">Cette semaine</button>
+            <button class="filter-chip" type="button" data-range="weekend" data-i18n="thisWeekend">Ce week-end</button>
+          </div>
+          <button id="resetButton" class="reset-button" type="button" data-i18n="reset">Réinitialiser</button>
+        </div>
+      </section>
+
+      <div class="status-row">
+        <p id="resultCount" class="result-count" aria-live="polite"></p>
+        <span id="connectionNote" class="connection-note" data-i18n="demoMode">Aperçu avec données de démonstration</span>
+      </div>
+
+      <div id="message" class="message" hidden></div>
+      <div id="events" class="events" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script src="i18n.js"></script>
+  <script src="demo.js"></script>
+  <script src="render.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
