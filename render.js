@@ -1,9 +1,9 @@
-window.JPDBCalendarRender = function ({ st, el, t, norm, cfg, taxonomy }) {
+window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
   function render() {
     if (st.loading) return;
     hide();
     el.note.classList.toggle("visible", st.demo);
-    const rows = st.events.filter(categoryCityGame).filter(dateMatch)
+    const rows = st.events.filter(cityGame).filter(searchMatch).filter(dateMatch)
       .sort((a,b)=>new Date(a.startAt)-new Date(b.startAt));
     el.count.textContent = rows.length===1 ? t("oneResult") : t("manyResults").replace("{count}",rows.length);
     el.events.innerHTML = "";
@@ -41,12 +41,14 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg, taxonomy }) {
     m.append(tm,c,badge); a.append(m); if(d)a.append(d); return a;
   }
 
-  function categoryCityGame(e){
-    const games=Array.isArray(e.games)?e.games:[];
-    const cat=!st.category||games.some(g=>taxonomy.categoryForGame(g)===st.category);
+  function cityGame(e){
     const cm=!st.city||norm(e.city)===norm(st.city);
-    const gm=!st.game||games.some(g=>norm(g)===norm(st.game));
-    return cat&&cm&&gm;
+    const gm=!st.game||(Array.isArray(e.games)&&e.games.some(g=>norm(g)===norm(st.game)));
+    return cm&&gm;
+  }
+  function searchMatch(e){
+    if(!st.search)return true;
+    return norm([e.title,e.description,e.city,e.venue,...(e.games||[])].filter(Boolean).join(" ")).includes(norm(st.search));
   }
   function dateMatch(e){
     if(st.range==="all")return true;
