@@ -52,7 +52,9 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
       const actions=document.createElement("div"); actions.className="event-actions";
       if(e.registrationOpen&&(e.spotsLeft===null||e.spotsLeft===undefined||Number(e.spotsLeft)>0)){
         const join=document.createElement("a"); join.className="join-button";
-        join.href=`join/?event=${encodeURIComponent(e.id)}&competition=${encodeURIComponent(e.competitionId)}`;
+        const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId)});
+        if(cfg.api)params.set("api",cfg.api);
+        join.href=`join/?${params.toString()}`;
         join.textContent=t("join"); actions.append(join);
       } else {
         const closed=document.createElement("span"); closed.className="join-button disabled";
