@@ -4,7 +4,7 @@
   const DEFAULT_API="https://jouer-pour-de-bon-api.onrender.com";
   const cfg={api:(q.get("demo")==="1"?"":(q.get("api")||DEFAULT_API)).replace(/\/$/,""),tz:"America/Montreal",lang:q.get("lang")==="en"?"en":"fr"};
   const tr=window.JPDB_CALENDAR_I18N;
-  const st={lang:localStorage.getItem("jpdb-calendar-language")||cfg.lang,city:"",game:"",range:"all",search:"",filters:{cities:[],games:[]},events:[],loading:false,demo:!cfg.api};
+  const st={lang:localStorage.getItem("jpdb-calendar-language")||cfg.lang,city:"",game:"",range:"all",search:"",filters:{cities:[],games:[]},events:[],loading:false,demo:!cfg.api,pagination:null};
   const $=id=>document.getElementById(id);
   const el={langs:[...document.querySelectorAll("[data-lang]")],ranges:[...document.querySelectorAll("[data-range]")],city:$("citySelect"),game:$("gameSelect"),search:$("searchInput"),reset:$("resetButton"),count:$("resultCount"),events:$("events"),msg:$("message"),note:$("connectionNote")};
   const t=k=>tr[st.lang]?.[k]||tr.fr[k]||k;
@@ -46,9 +46,14 @@
   }
 
   async function loadEvents(){
-    const p=new URLSearchParams({from:new Date().toISOString()}); if(st.city)p.set("city",st.city); if(st.game)p.set("game",st.game);
-    const r=await fetch(`${cfg.api}/v1/events?${p}`,{headers:{Accept:"application/json"}}); if(!r.ok)throw Error(`events ${r.status}`);
-    const j=await r.json(); st.events=Array.isArray(j?.data)?j.data:[];
+    const p=new URLSearchParams({from:new Date().toISOString(),page:"1",limit:"100"});
+    if(st.city)p.set("city",st.city);
+    if(st.game)p.set("game",st.game);
+    const r=await fetch(`${cfg.api}/v1/events/search?${p}`,{headers:{Accept:"application/json"}});
+    if(!r.ok)throw Error(`events ${r.status}`);
+    const j=await r.json();
+    st.events=Array.isArray(j?.data)?j.data:[];
+    st.pagination=j?.pagination&&typeof j.pagination==="object"?j.pagination:null;
   }
 
   function fillSelects(){ fill(el.city,t("allCities"),st.filters.cities,st.city); fill(el.game,t("allGames"),st.filters.games,st.game); }
