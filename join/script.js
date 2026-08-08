@@ -3,12 +3,15 @@
   const q=new URLSearchParams(location.search);
   const eventId=q.get("event")||"";
   const competitionId=q.get("competition")||"";
-  const api=(q.get("api")||"").replace(/\/$/,"");
+  const DEFAULT_API="https://jouer-pour-de-bon-api.onrender.com";
+  const api=(q.get("api")||DEFAULT_API).replace(/\/$/,"");
+  const ALLOWED_WIX_ORIGINS=new Set(["https://www.jouerpourdebon.ca","https://jouerpourdebon.ca"]);
   let lang=localStorage.getItem("jpdb-calendar-language")||"fr";
+  let pendingRequest=null;
   const $=id=>document.getElementById(id);
   const messages={
-    fr:{eyebrow:"Jouer pour de bon",title:"Participer",causeLabel:"Cause pour laquelle vous jouez *",accountNote:"Vous devez être connecté à votre compte de joueur pour confirmer l’inscription.",joinButton:"Participer à cette activité",players:"joueurs inscrits",spots:"places restantes",age:"Âge",allAges:"Tous âges",agePlus:"{min} ans et +",ageUpTo:"Jusqu’à {max} ans",ageRange:"{min}–{max} ans",free:"Gratuit",full:"Cette activité est complète.",demo:"Aperçu : la connexion au compte joueur et à l’API sera activée avant les inscriptions réelles.",signIn:"Connectez-vous à votre compte de joueur pour continuer.",success:"Votre inscription a été créée.",error:"Impossible de créer l’inscription pour le moment.",unknown:"Activité sélectionnée"},
-    en:{eyebrow:"Playing for Good",title:"Join",causeLabel:"Cause you are playing for *",accountNote:"You must be signed in to your player account to confirm registration.",joinButton:"Join this activity",players:"players joined",spots:"spots left",age:"Age",allAges:"All ages",agePlus:"Ages {min}+",ageUpTo:"Up to age {max}",ageRange:"Ages {min}–{max}",free:"Free",full:"This activity is full.",demo:"Preview: player account and API connection will be enabled before real registrations.",signIn:"Sign in to your player account to continue.",success:"Your registration has been created.",error:"Registration could not be created right now.",unknown:"Selected activity"}
+    fr:{eyebrow:"Jouer pour de bon",title:"Participer",causeLabel:"Cause pour laquelle vous jouez *",accountNote:"Vous devez être connecté à votre compte de joueur pour confirmer l’inscription.",joinButton:"Participer à cette activité",players:"joueurs inscrits",spots:"places restantes",age:"Âge",allAges:"Tous âges",agePlus:"{min} ans et +",ageUpTo:"Jusqu’à {max} ans",ageRange:"{min}–{max} ans",free:"Gratuit",full:"Cette activité est complète.",demo:"Aperçu : ouvrez cette page depuis Jouer pour de bon pour vous inscrire.",signIn:"Connectez-vous à votre compte de joueur sur Jouer pour de bon pour continuer.",submitting:"Inscription en cours…",success:"Votre inscription a été créée.",already:"Vous êtes déjà inscrit à cette activité.",profileRequired:"Veuillez d’abord compléter votre profil joueur.",closed:"Les inscriptions à cette activité sont fermées.",notFound:"Cette activité n’est plus disponible.",invalidCause:"Veuillez choisir une cause valide.",error:"Impossible de créer l’inscription pour le moment.",unknown:"Activité sélectionnée"},
+    en:{eyebrow:"Playing for Good",title:"Join",causeLabel:"Cause you are playing for *",accountNote:"You must be signed in to your player account to confirm registration.",joinButton:"Join this activity",players:"players joined",spots:"spots left",age:"Age",allAges:"All ages",agePlus:"Ages {min}+",ageUpTo:"Up to age {max}",ageRange:"Ages {min}–{max}",free:"Free",full:"This activity is full.",demo:"Preview: open this page from Playing for Good to register.",signIn:"Sign in to your Playing for Good player account to continue.",submitting:"Registering…",success:"Your registration has been created.",already:"You are already registered for this activity.",profileRequired:"Please complete your player profile first.",closed:"Registration for this activity is closed.",notFound:"This activity is no longer available.",invalidCause:"Please choose a valid cause.",error:"Registration could not be created right now.",unknown:"Selected activity"}
   };
   const demo={
     "demo-basketball":{title:"Basketball Knockout",city:"Sherbrooke",venue:"Parc Jacques-Cartier",participantsCount:8,spotsLeft:4,registrationOpen:true,minAge:18,maxAge:null,feeAmount:20,feeCurrency:"CAD"},
@@ -22,6 +25,7 @@
   async function init(){
     document.querySelectorAll("[data-lang]").forEach(button=>button.onclick=()=>{lang=button.dataset.lang;localStorage.setItem("jpdb-calendar-language",lang);applyLang();renderSummary();});
     $("joinForm").addEventListener("submit",submit);
+    window.addEventListener("message",receiveWixResult);
     applyLang();
     if(api&&eventId){
       try{
@@ -54,27 +58,80 @@
     ].filter(Boolean).forEach(value=>{const span=document.createElement("span");span.textContent=value;facts.append(span);});
     $("eventSummary").append(facts);
     const button=$("joinForm").querySelector("button[type=submit]");
-    if(e.registrationOpen===false||Number(e.spotsLeft)===0){show(messages[lang].full,"error");button.disabled=true;} else {button.disabled=false;}
+    if(e.registrationOpen===false||Number(e.spotsLeft)===0){show(messages[lang].full,"error");button.disabled=true;} else if(!pendingRequest){button.disabled=false;}
+  }
+
+  function wixParentOrigin(){
+    if(window.parent===window)return "";
+    try{
+      const origin=new URL(document.referrer).origin;
+      if(ALLOWED_WIX_ORIGINS.has(origin))return origin;
+    }catch{}
+    return "https://www.jouerpourdebon.ca";
   }
 
   async function submit(event){
     event.preventDefault();
     const cause=$("causeInput").value.trim(); if(!cause)return;
     if(!competitionId){show(messages[lang].error,"error");return;}
-    if(!api){show(messages[lang].demo);return;}
-    const token=localStorage.getItem("jpdb_api_token")||"";
-    if(!token){show(messages[lang].signIn);return;}
-    try{
-      const response=await fetch(`${api}/v1/registrations`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:`Bearer ${token}`},
-        body:JSON.stringify({competitionId,customCauseName:cause})
-      });
-      const json=await response.json().catch(()=>({}));
-      if(!response.ok)throw new Error(json.error||`HTTP ${response.status}`);
+    const parentOrigin=wixParentOrigin();
+    if(!parentOrigin){show(messages[lang].signIn);return;}
+    if(pendingRequest)return;
+
+    const requestId=typeof crypto?.randomUUID==="function"?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const button=$("joinForm").querySelector("button[type=submit]");
+    button.disabled=true;
+    show(messages[lang].submitting);
+
+    const timer=setTimeout(()=>{
+      if(!pendingRequest||pendingRequest.id!==requestId)return;
+      pendingRequest=null;
+      if(eventData?.registrationOpen!==false&&Number(eventData?.spotsLeft)!==0)button.disabled=false;
+      show(messages[lang].error,"error");
+    },25000);
+
+    pendingRequest={id:requestId,timer};
+    window.parent.postMessage({
+      source:"jpdb-calendar",
+      type:"JPDB_JOIN_REQUEST",
+      requestId,
+      payload:{competitionId,customCauseName:cause}
+    },parentOrigin);
+  }
+
+  function receiveWixResult(event){
+    if(event.source!==window.parent||!ALLOWED_WIX_ORIGINS.has(event.origin))return;
+    const data=event.data;
+    if(!data||data.source!=="jpdb-wix"||data.type!=="JPDB_JOIN_RESULT")return;
+    if(!pendingRequest||data.requestId!==pendingRequest.id)return;
+
+    clearTimeout(pendingRequest.timer);
+    pendingRequest=null;
+    const button=$("joinForm").querySelector("button[type=submit]");
+
+    if(data.success){
       show(messages[lang].success,"success");
-      $("joinForm").querySelector("button[type=submit]").disabled=true;
-    }catch(error){console.error(error);show(messages[lang].error,"error");}
+      button.disabled=true;
+      return;
+    }
+
+    show(errorMessage(data.code,data.message),"error");
+    if(eventData?.registrationOpen!==false&&Number(eventData?.spotsLeft)!==0)button.disabled=false;
+  }
+
+  function errorMessage(code,fallback){
+    const key={
+      COMPETITION_FULL:"full",
+      ALREADY_REGISTERED:"already",
+      PLAYER_PROFILE_REQUIRED:"profileRequired",
+      REGISTRATION_CLOSED:"closed",
+      COMPETITION_NOT_FOUND:"notFound",
+      INVALID_CAUSE:"invalidCause",
+      AUTH_REQUIRED:"signIn"
+    }[String(code||"")];
+    if(key)return messages[lang][key];
+    if(lang==="fr"&&typeof fallback==="string"&&fallback.trim())return fallback.trim();
+    return messages[lang].error;
   }
 
   function ageLabel(minRaw,maxRaw){
