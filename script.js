@@ -1,7 +1,8 @@
 (() => {
   "use strict";
   const q=new URLSearchParams(location.search);
-  const cfg={api:(q.get("api")||"").replace(/\/$/,""),tz:"America/Montreal",lang:q.get("lang")==="en"?"en":"fr"};
+  const DEFAULT_API="https://jouer-pour-de-bon-api.onrender.com";
+  const cfg={api:(q.get("demo")==="1"?"":(q.get("api")||DEFAULT_API)).replace(/\/$/,""),tz:"America/Montreal",lang:q.get("lang")==="en"?"en":"fr"};
   const tr=window.JPDB_CALENDAR_I18N;
   const st={lang:localStorage.getItem("jpdb-calendar-language")||cfg.lang,city:"",game:"",range:"all",search:"",filters:{cities:[],games:[]},events:[],loading:false,demo:!cfg.api};
   const $=id=>document.getElementById(id);
