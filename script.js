@@ -40,13 +40,13 @@
   }
 
   async function loadFilters(){
-    const r=await fetch(`${cfg.api}/v1/events/filters`,{headers:{Accept:"application/json"}});
+    const r=await fetch(`${cfg.api}/v1/events/search/filters`,{headers:{Accept:"application/json"}});
     if(!r.ok)throw Error(`filters ${r.status}`);
     const j=await r.json(); st.filters={cities:Array.isArray(j?.data?.cities)?j.data.cities:[],games:Array.isArray(j?.data?.games)?j.data.games:[]};
   }
 
   async function loadEvents(){
-    const p=new URLSearchParams({from:new Date().toISOString(),page:"1",limit:"100"});
+    const p=new URLSearchParams({from:new Date().toISOString(),limit:"100"});
     if(st.city)p.set("city",st.city);
     if(st.game)p.set("game",st.game);
     const r=await fetch(`${cfg.api}/v1/events/search?${p}`,{headers:{Accept:"application/json"}});
