@@ -1,0 +1,20 @@
+name: Validate Join bridge JavaScript
+
+on:
+  push:
+    branches:
+      - agent/wix-member-join-bridge
+    paths:
+      - 'join/script.js'
+      - '.github/workflows/validate-join-bridge.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check Join JavaScript syntax
+        run: node --check join/script.js
