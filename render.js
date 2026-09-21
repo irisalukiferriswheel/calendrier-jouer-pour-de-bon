@@ -3,11 +3,12 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
     if (st.loading) return;
     hide();
     el.note.classList.toggle("visible", st.demo);
+    if(st.loadFailed) message(t(st.demo?"demoUnavailable":"loadError"),true);
     const rows = st.events.filter(cityGame).filter(searchMatch).filter(dateMatch)
       .sort((a,b)=>new Date(a.startAt)-new Date(b.startAt));
     el.count.textContent = rows.length===1 ? t("oneResult") : t("manyResults").replace("{count}",rows.length);
     el.events.innerHTML = "";
-    if (!rows.length) { message(t("noEvents")); return; }
+    if (!rows.length) { if(!st.loadFailed)message(t("noEvents")); return; }
     const groups = new Map();
     rows.forEach(e => { const k=dateKey(e.startAt,e.timezone||cfg.tz); if(!groups.has(k))groups.set(k,[]); groups.get(k).push(e); });
     for (const group of groups.values()) {
@@ -52,13 +53,19 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
       const actions=document.createElement("div"); actions.className="event-actions";
       if(e.registrationOpen&&(e.spotsLeft===null||e.spotsLeft===undefined||Number(e.spotsLeft)>0)){
         const join=document.createElement("a"); join.className="join-button";
-        const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId)});
-        if(cfg.api)params.set("api",cfg.api);
-        join.href=`join/?${params.toString()}`;
+        if(st.demo){
+          const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId),demo:"1",lang:st.lang});
+          join.href=`join/?${params.toString()}`;
+        }else{
+          // Leave the calendar iframe so Wix can establish the member session.
+          const params=new URLSearchParams({jpdbEvent:String(e.id)});
+          join.href=`https://www.jouerpourdebon.ca/competitions?${params.toString()}`;
+          join.target="_top";
+        }
         join.textContent=t("join"); actions.append(join);
       } else {
         const closed=document.createElement("span"); closed.className="join-button disabled";
-        closed.textContent=Number(e.spotsLeft)===0?t("full"):t("registrationClosed"); actions.append(closed);
+        closed.textContent=e.spotsLeft!=null&&Number(e.spotsLeft)===0?t("full"):t("registrationClosed"); actions.append(closed);
       }
       c.append(actions);
     }
@@ -92,14 +99,17 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
   function dateMatch(e){
     if(st.range==="all")return true;
     const d=new Date(e.startAt),n=new Date();
-    if(st.range==="week")return d>=n&&d<=endWeek(n);
-    const w=weekend(n); return d>=w.start&&d<=w.end;
-  }
-  function endWeek(n){ const d=new Date(n); d.setDate(d.getDate()+((7-d.getDay())%7)); d.setHours(23,59,59,999); return d; }
-  function weekend(n){
-    const s=new Date(n),day=s.getDay(); let add=6-day; if(day===0)add=-1;
-    s.setDate(s.getDate()+add); s.setHours(0,0,0,0);
-    const e=new Date(s); e.setDate(e.getDate()+1); e.setHours(23,59,59,999); return{start:s,end:e};
+    if(!Number.isFinite(d.getTime())||d<n)return false;
+    // Use calendar dates in Montreal, not the visitor's machine timezone.
+    // UTC arithmetic here advances date labels, avoiding DST hour offsets.
+    const today=dateKey(n,cfg.tz),eventDate=dateKey(d,cfg.tz);
+    const anchor=new Date(`${today}T00:00:00Z`);
+    const weekday=anchor.getUTCDay();
+    const offset=days=>{const v=new Date(anchor);v.setUTCDate(v.getUTCDate()+days);return v.toISOString().slice(0,10);};
+    const sunday=offset((7-weekday)%7);
+    if(st.range==="week")return eventDate>=today&&eventDate<=sunday;
+    const saturday=offset(weekday===0?-1:6-weekday);
+    return eventDate>=saturday&&eventDate<=sunday;
   }
   function day(e){ return new Intl.DateTimeFormat(st.lang==="fr"?"fr-CA":"en-CA",{timeZone:e.timezone||cfg.tz,weekday:"long",day:"numeric",month:"long"}).format(new Date(e.startAt)); }
   function time(v,z){ return new Intl.DateTimeFormat(st.lang==="fr"?"fr-CA":"en-CA",{timeZone:z||cfg.tz,hour:"numeric",minute:"2-digit"}).format(new Date(v)); }

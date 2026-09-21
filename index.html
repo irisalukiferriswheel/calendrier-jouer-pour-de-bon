@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Calendrier — Jouer pour de bon</title>
-  <link rel="stylesheet" href="styles.css?v=20260807-1630" />
-  <link rel="stylesheet" href="availability.css?v=20260807-1630" />
+  <link rel="stylesheet" href="styles.css?v=20260921-001" />
+  <link rel="stylesheet" href="availability.css?v=20260921-001" />
 </head>
 <body>
   <main class="calendar-shell">
@@ -22,7 +22,7 @@
         </div>
       </div>
 
-      <section class="controls" aria-label="Calendar filters / Filtres du calendrier">
+      <form id="searchForm" class="controls" role="search" aria-label="Calendar filters / Filtres du calendrier">
         <div class="search-row">
           <div class="field">
             <label for="searchInput" data-i18n="searchLabel">Rechercher</label>
@@ -39,14 +39,15 @@
         </div>
 
         <div class="date-row">
+          <button id="searchButton" class="search-button" type="submit" data-i18n="searchLabel">Rechercher</button>
           <div class="date-filters" role="group" aria-label="Date range / Période">
-            <button class="filter-chip active" type="button" data-range="all" data-i18n="allDates">Toutes les dates</button>
-            <button class="filter-chip" type="button" data-range="week" data-i18n="thisWeek">Cette semaine</button>
-            <button class="filter-chip" type="button" data-range="weekend" data-i18n="thisWeekend">Ce week-end</button>
+            <button class="filter-chip active" type="button" data-range="all" data-i18n="allDates" aria-pressed="true">Toutes les dates</button>
+            <button class="filter-chip" type="button" data-range="week" data-i18n="thisWeek" aria-pressed="false">Cette semaine</button>
+            <button class="filter-chip" type="button" data-range="weekend" data-i18n="thisWeekend" aria-pressed="false">Ce week-end</button>
           </div>
           <button id="resetButton" class="reset-button" type="button" data-i18n="reset">Réinitialiser</button>
         </div>
-      </section>
+      </form>
 
       <div class="status-row">
         <p id="resultCount" class="result-count" aria-live="polite"></p>
@@ -58,9 +59,9 @@
     </section>
   </main>
 
-  <script src="i18n.js?v=20260807-1630"></script>
-  <script src="demo.js?v=20260807-1630"></script>
-  <script src="render.js?v=20260807-1630"></script>
-  <script src="script.js?v=20260807-1630"></script>
+  <script src="i18n.js?v=20260921-001"></script>
+  <script src="demo.js?v=20260921-001"></script>
+  <script src="render.js?v=20260921-001"></script>
+  <script src="script.js?v=20260921-001"></script>
 </body>
 </html>

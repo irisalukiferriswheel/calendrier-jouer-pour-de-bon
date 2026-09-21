@@ -74,13 +74,23 @@ Pending-payment registrations reserve a spot, which prevents the final place fro
 
 ## Preview mode
 
-Until the shared API has a permanent public HTTPS deployment URL, the calendar shows three clearly marked demo events. The organizer and Join pages also remain safe previews unless an API address and authenticated token are available.
+The calendar reads the shared API by default. If the initial unfiltered result is empty, it shows three clearly marked sample events with future dates, including available and full activities. If the API is unavailable, it also shows an explicit error notice alongside the samples. A filtered live search with no matches stays empty; it does not introduce sample results.
+
+Use `?demo=1` to open the samples directly. Choose the text, city, game, and date filters, then click Search or press Enter to apply them together. Changing controls does not update results or send API requests until submission. Switching language preserves unsubmitted choices. Reset clears the controls and restores all results. These controls also work on samples.
+
+This week and This weekend use Montreal calendar dates, independent of the visitor's device timezone, and exclude activities that already started. Search and Reset are disabled while an event request is pending; changes made to other filters during that request remain pending until the next Search.
+
+Available events show **Request to join / Demander à participer**. Real events navigate the top-level page to `https://www.jouerpourdebon.ca/competitions?jpdbEvent=EVENT_ID`, the canonical Wix member-registration entry point confirmed by the registration owner. Wix owns the member session and registration bridge. Sample events remain inside the calendar and open a clearly labelled demonstration form: submitting only displays a local demo confirmation and never calls the API or sends a registration message to Wix. Full and closed events cannot be requested.
 
 For API testing, append the API address to a page URL:
 
 `?api=https://YOUR-API-HOST`
 
 No Supabase service-role key belongs in this static repository.
+
+## Validation
+
+The browser regression test uses Node.js and Playwright with installed Google Chrome: `node --test tests/calendar.test.cjs` (install Playwright locally with `npm install --no-save playwright` first). Set `BROWSER_CHANNEL=msedge` to use Edge. It checks empty/error fallback, live empty search results, FR/EN search, Enter, dropdowns, mobile overflow, full activities, and that sample requests never reach the API.
 
 ## Deployment
 
