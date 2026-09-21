@@ -76,7 +76,7 @@ Pending-payment registrations reserve a spot, which prevents the final place fro
 
 The calendar reads the shared API by default. If the initial unfiltered result is empty, it shows three clearly marked sample events with future dates, including available and full activities. If the API is unavailable, it also shows an explicit error notice alongside the samples. A filtered live search with no matches stays empty; it does not introduce sample results.
 
-Use `?demo=1` to open the samples directly. Search works with the Search button, Enter, and live text filtering. City, game, date, reset, and FR/EN controls also work on samples.
+Use `?demo=1` to open the samples directly. Choose the text, city, game, and date filters, then click Search or press Enter to apply them together. Changing controls does not update results or send API requests until submission. Switching language preserves unsubmitted choices. Reset clears the controls and restores all results. These controls also work on samples.
 
 Available events show **Request to join / Demander à participer**. Real events retain the authenticated Wix registration bridge. Sample events open a clearly labelled demonstration form: submitting only displays a local demo confirmation and never calls the API or sends a registration message to Wix. Full and closed events cannot be requested.
 

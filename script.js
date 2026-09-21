@@ -10,6 +10,7 @@
   const t=k=>tr[st.lang]?.[k]||tr.fr[k]||k;
   const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase();
   const view=window.JPDBCalendarRender({st,el,t,norm,cfg});
+  let selectedRange="all";
 
   init();
 
@@ -31,16 +32,17 @@
   function bind(){
     $("searchForm").onsubmit=async event=>{
       event.preventDefault();
+      if(st.loading)return;
+      st.city=el.city.value;
+      st.game=el.game.value;
+      st.range=selectedRange;
       st.search=el.search.value.trim();
       await refresh();
       view.render();
     };
     el.langs.forEach(b=>b.onclick=()=>{ st.lang=b.dataset.lang; localStorage.setItem("jpdb-calendar-language",st.lang); applyLang(); fillSelects(); view.render(); });
-    el.city.onchange=async()=>{ st.city=el.city.value; await refresh(); view.render(); };
-    el.game.onchange=async()=>{ st.game=el.game.value; await refresh(); view.render(); };
-    el.search.oninput=()=>{ st.search=el.search.value.trim(); view.render(); };
-    el.ranges.forEach(b=>b.onclick=()=>{ st.range=b.dataset.range; el.ranges.forEach(x=>x.classList.toggle("active",x===b)); view.render(); });
-    el.reset.onclick=async()=>{ st.city=st.game=st.search=""; st.range="all"; el.search.value=""; el.ranges.forEach(x=>x.classList.toggle("active",x.dataset.range==="all")); fillSelects(); await refresh(); view.render(); };
+    el.ranges.forEach(b=>b.onclick=()=>{ selectedRange=b.dataset.range; el.ranges.forEach(x=>{const on=x===b;x.classList.toggle("active",on);x.setAttribute("aria-pressed",String(on));}); });
+    el.reset.onclick=async()=>{ if(st.loading)return; st.city=st.game=st.search=""; st.range=selectedRange="all"; el.city.value=el.game.value=el.search.value=""; el.ranges.forEach(x=>{const on=x.dataset.range==="all";x.classList.toggle("active",on);x.setAttribute("aria-pressed",String(on));}); fillSelects(); await refresh(); view.render(); };
   }
 
   async function refresh(){
@@ -69,7 +71,7 @@
     st.pagination=j?.pagination&&typeof j.pagination==="object"?j.pagination:null;
   }
 
-  function fillSelects(){ fill(el.city,t("allCities"),st.filters.cities,st.city); fill(el.game,t("allGames"),st.filters.games,st.game); }
+  function fillSelects(){ fill(el.city,t("allCities"),st.filters.cities,el.city.value); fill(el.game,t("allGames"),st.filters.games,el.game.value); }
   function fill(node,first,items,value){ node.innerHTML=""; option(node,first,""); items.forEach(x=>option(node,x,x)); node.value=value; }
   function option(node,label,value){ const o=document.createElement("option"); o.textContent=label; o.value=value; node.append(o); }
 
