@@ -184,6 +184,7 @@ input:focus, select:focus {
 }
 
 .search-button:hover { background: #123e84; }
+.search-button:disabled, .reset-button:disabled { opacity: .55; cursor: wait; }
 .status-row { flex-wrap: wrap; }
 
 .status-row {

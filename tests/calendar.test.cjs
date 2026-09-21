@@ -19,18 +19,24 @@ test('calendar search, sample fallback, join boundaries, and mobile layout', asy
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || 'chrome', headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({timezoneId:'America/Los_Angeles'});
     const base = `http://127.0.0.1:${server.address().port}`;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     let apiCalls = 0;
     let mode = 'empty';
+    let dateEvents=[];
+    let holdNext=false,releaseHeld;
     const live = { id:'live-event', competitionId:'live-competition', title:'Live chess', startAt:new Date(Date.now()+86400000).toISOString(), city:'Montréal', games:['Échecs'], registrationOpen:true, spotsLeft:2, maxParticipants:10 };
     await page.route('https://jouer-pour-de-bon-api.onrender.com/**', route => {
       apiCalls++;
       if(mode === 'error') return route.fulfill({status:503,body:'Unavailable'});
       const url = new URL(route.request().url());
-      const data = url.pathname.endsWith('/filters') ? {cities:['Montréal','Granby'],games:['Échecs']} : mode === 'live' && !url.searchParams.has('city') ? [live] : [];
+      const data = url.pathname.endsWith('/filters') ? {cities:['Montréal','Granby'],games:['Échecs']} : mode === 'dates' ? dateEvents : mode === 'live' && !url.searchParams.has('city') ? [live] : [];
+      if(holdNext&&!url.pathname.endsWith('/filters')){
+        holdNext=false;
+        return new Promise(resolve=>{releaseHeld=()=>route.fulfill({json:{data}}).then(resolve);});
+      }
       return route.fulfill({json:{data}});
     });
     await page.goto(base);
@@ -107,6 +113,43 @@ test('calendar search, sample fallback, join boundaries, and mobile layout', asy
     await page.goto(base);
     await page.locator('.event-card').nth(2).waitFor();
     assert.match(await page.locator('#message').innerText(),/indisponibles/);
+    // Calendar boundaries must use Montreal, even when the visitor is in LA.
+    await page.clock.setFixedTime(new Date('2026-09-28T02:00:00Z'));
+    mode='dates';
+    dateEvents=[
+      {...live,id:'sunday',title:'Sunday late',startAt:'2026-09-28T03:30:00Z'},
+      {...live,id:'monday',title:'Monday early',startAt:'2026-09-28T04:30:00Z'},
+      {...live,id:'past',title:'Saturday past',startAt:'2026-09-27T01:00:00Z'}
+    ];
+    await page.goto(base);
+    await page.locator('.event-card').nth(2).waitFor();
+    await page.locator('[data-range=week]').click();
+    assert.equal(await page.locator('.event-card').count(),3);
+    await page.locator('#searchButton').click();
+    await page.locator('.event-card').first().waitFor();
+    assert.deepEqual(await page.locator('.event-title').allTextContents(),['Sunday late']);
+    await page.locator('[data-range=weekend]').click();
+    await page.locator('#searchButton').click();
+    await page.locator('.event-card').first().waitFor();
+    assert.deepEqual(await page.locator('.event-title').allTextContents(),['Sunday late']);
+    holdNext=true;
+    const beforeSlow=apiCalls;
+    const slowRequest=page.waitForRequest(request=>request.url().includes('/v1/events/search?'));
+    await page.locator('#searchButton').click();
+    await slowRequest;
+    assert.equal(await page.locator('#searchButton').isDisabled(),true);
+    assert.equal(await page.locator('#resetButton').isDisabled(),true);
+    await page.locator('[data-range=all]').click();
+    await page.locator('[data-lang=en]').click();
+    await page.locator('#searchForm').evaluate(form=>form.requestSubmit());
+    assert.equal(apiCalls,beforeSlow+1);
+    await releaseHeld();
+    await page.locator('.event-card').first().waitFor();
+    assert.deepEqual(await page.locator('.event-title').allTextContents(),['Sunday late']);
+    assert.equal(await page.locator('#searchButton').isDisabled(),false);
+    await page.locator('#searchButton').click();
+    await page.locator('.event-card').nth(2).waitFor();
+    assert.equal(apiCalls,beforeSlow+2);
     assert.deepEqual(errors,[]);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });

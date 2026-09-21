@@ -95,14 +95,17 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
   function dateMatch(e){
     if(st.range==="all")return true;
     const d=new Date(e.startAt),n=new Date();
-    if(st.range==="week")return d>=n&&d<=endWeek(n);
-    const w=weekend(n); return d>=w.start&&d<=w.end;
-  }
-  function endWeek(n){ const d=new Date(n); d.setDate(d.getDate()+((7-d.getDay())%7)); d.setHours(23,59,59,999); return d; }
-  function weekend(n){
-    const s=new Date(n),day=s.getDay(); let add=6-day; if(day===0)add=-1;
-    s.setDate(s.getDate()+add); s.setHours(0,0,0,0);
-    const e=new Date(s); e.setDate(e.getDate()+1); e.setHours(23,59,59,999); return{start:s,end:e};
+    if(!Number.isFinite(d.getTime())||d<n)return false;
+    // Use calendar dates in Montreal, not the visitor's machine timezone.
+    // UTC arithmetic here advances date labels, avoiding DST hour offsets.
+    const today=dateKey(n,cfg.tz),eventDate=dateKey(d,cfg.tz);
+    const anchor=new Date(`${today}T00:00:00Z`);
+    const weekday=anchor.getUTCDay();
+    const offset=days=>{const v=new Date(anchor);v.setUTCDate(v.getUTCDate()+days);return v.toISOString().slice(0,10);};
+    const sunday=offset((7-weekday)%7);
+    if(st.range==="week")return eventDate>=today&&eventDate<=sunday;
+    const saturday=offset(weekday===0?-1:6-weekday);
+    return eventDate>=saturday&&eventDate<=sunday;
   }
   function day(e){ return new Intl.DateTimeFormat(st.lang==="fr"?"fr-CA":"en-CA",{timeZone:e.timezone||cfg.tz,weekday:"long",day:"numeric",month:"long"}).format(new Date(e.startAt)); }
   function time(v,z){ return new Intl.DateTimeFormat(st.lang==="fr"?"fr-CA":"en-CA",{timeZone:z||cfg.tz,hour:"numeric",minute:"2-digit"}).format(new Date(v)); }

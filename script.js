@@ -85,5 +85,5 @@
 
   function derive(es){return{cities:uniq(es.map(e=>e.city).filter(Boolean)),games:uniq(es.flatMap(e=>e.games||[]))};}
   function uniq(a){const m=new Map();a.forEach(v=>{const k=norm(v);if(!m.has(k))m.set(k,v)});return[...m.values()].sort((a,b)=>a.localeCompare(b,st.lang));}
-  function loading(on){st.loading=on;if(on){view.message(t("loading"));el.events.innerHTML="";el.count.textContent=""}else if(el.msg.textContent===t("loading"))view.hide();}
+  function loading(on){st.loading=on;$("searchButton").disabled=on;el.reset.disabled=on;el.events.setAttribute("aria-busy",String(on));if(on){view.message(t("loading"));el.events.innerHTML="";el.count.textContent=""}else if(el.msg.textContent===t("loading"))view.hide();}
 })();

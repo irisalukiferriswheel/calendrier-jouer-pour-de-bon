@@ -78,6 +78,8 @@ The calendar reads the shared API by default. If the initial unfiltered result i
 
 Use `?demo=1` to open the samples directly. Choose the text, city, game, and date filters, then click Search or press Enter to apply them together. Changing controls does not update results or send API requests until submission. Switching language preserves unsubmitted choices. Reset clears the controls and restores all results. These controls also work on samples.
 
+This week and This weekend use Montreal calendar dates, independent of the visitor's device timezone, and exclude activities that already started. Search and Reset are disabled while an event request is pending; changes made to other filters during that request remain pending until the next Search.
+
 Available events show **Request to join / Demander à participer**. Real events retain the authenticated Wix registration bridge. Sample events open a clearly labelled demonstration form: submitting only displays a local demo confirmation and never calls the API or sends a registration message to Wix. Full and closed events cannot be requested.
 
 For API testing, append the API address to a page URL:
