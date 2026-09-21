@@ -53,11 +53,15 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
       const actions=document.createElement("div"); actions.className="event-actions";
       if(e.registrationOpen&&(e.spotsLeft===null||e.spotsLeft===undefined||Number(e.spotsLeft)>0)){
         const join=document.createElement("a"); join.className="join-button";
-        const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId)});
-        if(st.demo)params.set("demo","1");
-        else if(cfg.api)params.set("api",cfg.api);
-        params.set("lang",st.lang);
-        join.href=`join/?${params.toString()}`;
+        if(st.demo){
+          const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId),demo:"1",lang:st.lang});
+          join.href=`join/?${params.toString()}`;
+        }else{
+          // Leave the calendar iframe so Wix can establish the member session.
+          const params=new URLSearchParams({jpdbEvent:String(e.id)});
+          join.href=`https://www.jouerpourdebon.ca/competitions?${params.toString()}`;
+          join.target="_top";
+        }
         join.textContent=t("join"); actions.append(join);
       } else {
         const closed=document.createElement("span"); closed.className="join-button disabled";

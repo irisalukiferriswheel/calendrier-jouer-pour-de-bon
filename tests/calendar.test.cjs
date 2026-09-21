@@ -93,7 +93,8 @@ test('calendar search, sample fallback, join boundaries, and mobile layout', asy
     await page.getByRole('link',{name:'Demander à participer'}).waitFor();
     assert.equal(await page.locator('.event-card').count(),1);
     assert.equal(await page.locator('#connectionNote').isVisible(),false);
-    assert.match(await page.locator('.join-button').getAttribute('href'),/competition=live-competition/);
+    assert.equal(await page.locator('.join-button').getAttribute('href'),'https://www.jouerpourdebon.ca/competitions?jpdbEvent=live-event');
+    assert.equal(await page.locator('.join-button').getAttribute('target'),'_top');
     const callsBeforeFilters=apiCalls;
     await page.locator('#citySelect').selectOption('Granby');
     await page.locator('#gameSelect').selectOption('Échecs');
