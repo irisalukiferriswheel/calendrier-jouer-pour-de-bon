@@ -74,13 +74,21 @@ Pending-payment registrations reserve a spot, which prevents the final place fro
 
 ## Preview mode
 
-Until the shared API has a permanent public HTTPS deployment URL, the calendar shows three clearly marked demo events. The organizer and Join pages also remain safe previews unless an API address and authenticated token are available.
+The calendar reads the shared API by default. If the initial unfiltered result is empty, it shows three clearly marked sample events with future dates, including available and full activities. If the API is unavailable, it also shows an explicit error notice alongside the samples. A filtered live search with no matches stays empty; it does not introduce sample results.
+
+Use `?demo=1` to open the samples directly. Search works with the Search button, Enter, and live text filtering. City, game, date, reset, and FR/EN controls also work on samples.
+
+Available events show **Request to join / Demander à participer**. Real events retain the authenticated Wix registration bridge. Sample events open a clearly labelled demonstration form: submitting only displays a local demo confirmation and never calls the API or sends a registration message to Wix. Full and closed events cannot be requested.
 
 For API testing, append the API address to a page URL:
 
 `?api=https://YOUR-API-HOST`
 
 No Supabase service-role key belongs in this static repository.
+
+## Validation
+
+The browser regression test uses Node.js and Playwright with installed Google Chrome: `node --test tests/calendar.test.cjs` (install Playwright locally with `npm install --no-save playwright` first). Set `BROWSER_CHANNEL=msedge` to use Edge. It checks empty/error fallback, live empty search results, FR/EN search, Enter, dropdowns, mobile overflow, full activities, and that sample requests never reach the API.
 
 ## Deployment
 

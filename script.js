@@ -16,13 +16,25 @@
   async function init(){
     bind(); applyLang(); loading(true);
     try {
-      if(cfg.api){ await loadFilters(); await loadEvents(); }
-      else { st.events=window.makeJPDBDemoEvents(cfg.tz); st.filters=derive(st.events); }
+      if(cfg.api){
+        await loadEvents();
+        if(!st.events.length) useDemo();
+        else { try { await loadFilters(); } catch { st.filters=derive(st.events); } }
+      }
+      else useDemo();
       fillSelects(); loading(false); view.render();
-    } catch(err){ console.error(err); loading(false); view.message(t("loadError"),true); }
+    } catch(err){ console.error(err); useDemo(); st.loadFailed=true; fillSelects(); loading(false); view.render(); }
   }
 
+  function useDemo(){ st.demo=true; st.events=window.makeJPDBDemoEvents(cfg.tz); st.filters=derive(st.events); st.pagination=null; }
+
   function bind(){
+    $("searchForm").onsubmit=async event=>{
+      event.preventDefault();
+      st.search=el.search.value.trim();
+      await refresh();
+      view.render();
+    };
     el.langs.forEach(b=>b.onclick=()=>{ st.lang=b.dataset.lang; localStorage.setItem("jpdb-calendar-language",st.lang); applyLang(); fillSelects(); view.render(); });
     el.city.onchange=async()=>{ st.city=el.city.value; await refresh(); view.render(); };
     el.game.onchange=async()=>{ st.game=el.game.value; await refresh(); view.render(); };
@@ -32,15 +44,15 @@
   }
 
   async function refresh(){
-    if(!cfg.api)return;
+    if(st.demo||!cfg.api)return;
     loading(true);
     try{ await loadEvents(); }
-    catch(err){ console.error(err); view.message(t("loadError"),true); }
+    catch(err){ console.error(err); st.loadFailed=true; st.events=[]; }
     finally{ loading(false); }
   }
 
   async function loadFilters(){
-    const r=await fetch(`${cfg.api}/v1/events/search/filters`,{headers:{Accept:"application/json"}});
+    const r=await fetch(`${cfg.api}/v1/events/search/filters`,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(15000)});
     if(!r.ok)throw Error(`filters ${r.status}`);
     const j=await r.json(); st.filters={cities:Array.isArray(j?.data?.cities)?j.data.cities:[],games:Array.isArray(j?.data?.games)?j.data.games:[]};
   }
@@ -49,10 +61,11 @@
     const p=new URLSearchParams({from:new Date().toISOString(),limit:"100"});
     if(st.city)p.set("city",st.city);
     if(st.game)p.set("game",st.game);
-    const r=await fetch(`${cfg.api}/v1/events/search?${p}`,{headers:{Accept:"application/json"}});
+    const r=await fetch(`${cfg.api}/v1/events/search?${p}`,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(15000)});
     if(!r.ok)throw Error(`events ${r.status}`);
     const j=await r.json();
     st.events=Array.isArray(j?.data)?j.data:[];
+    st.loadFailed=false;
     st.pagination=j?.pagination&&typeof j.pagination==="object"?j.pagination:null;
   }
 

@@ -173,6 +173,19 @@ input:focus, select:focus {
   background: transparent;
 }
 
+.search-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 24px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 800;
+}
+
+.search-button:hover { background: #123e84; }
+.status-row { flex-wrap: wrap; }
+
 .status-row {
   display: flex;
   align-items: center;

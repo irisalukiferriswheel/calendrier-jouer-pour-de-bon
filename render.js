@@ -3,11 +3,12 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
     if (st.loading) return;
     hide();
     el.note.classList.toggle("visible", st.demo);
+    if(st.loadFailed) message(t(st.demo?"demoUnavailable":"loadError"),true);
     const rows = st.events.filter(cityGame).filter(searchMatch).filter(dateMatch)
       .sort((a,b)=>new Date(a.startAt)-new Date(b.startAt));
     el.count.textContent = rows.length===1 ? t("oneResult") : t("manyResults").replace("{count}",rows.length);
     el.events.innerHTML = "";
-    if (!rows.length) { message(t("noEvents")); return; }
+    if (!rows.length) { if(!st.loadFailed)message(t("noEvents")); return; }
     const groups = new Map();
     rows.forEach(e => { const k=dateKey(e.startAt,e.timezone||cfg.tz); if(!groups.has(k))groups.set(k,[]); groups.get(k).push(e); });
     for (const group of groups.values()) {
@@ -53,12 +54,14 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
       if(e.registrationOpen&&(e.spotsLeft===null||e.spotsLeft===undefined||Number(e.spotsLeft)>0)){
         const join=document.createElement("a"); join.className="join-button";
         const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId)});
-        if(cfg.api)params.set("api",cfg.api);
+        if(st.demo)params.set("demo","1");
+        else if(cfg.api)params.set("api",cfg.api);
+        params.set("lang",st.lang);
         join.href=`join/?${params.toString()}`;
         join.textContent=t("join"); actions.append(join);
       } else {
         const closed=document.createElement("span"); closed.className="join-button disabled";
-        closed.textContent=Number(e.spotsLeft)===0?t("full"):t("registrationClosed"); actions.append(closed);
+        closed.textContent=e.spotsLeft!=null&&Number(e.spotsLeft)===0?t("full"):t("registrationClosed"); actions.append(closed);
       }
       c.append(actions);
     }
