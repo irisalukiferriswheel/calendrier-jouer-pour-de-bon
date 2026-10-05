@@ -47,8 +47,10 @@ The Join page:
 - loads public event availability without requiring login
 - shows participant count, spots left, age group, and fee
 - disables joining when the activity is full or registration is closed
-- asks which cause the player is playing for
-- requires a player access token only for the actual `POST /v1/registrations` call
+- displays the cause chosen by the event organizer; players cannot substitute another cause
+- registers through the authenticated Wix bridge; the API derives the event's cause
+
+The inherited-cause change requires API #66 and Wix #31. No payment collection or deadline catch-up message is sent by this page.
 
 ## API data flow
 

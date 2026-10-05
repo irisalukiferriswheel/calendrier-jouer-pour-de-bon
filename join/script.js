@@ -57,8 +57,9 @@
       price
     ].filter(Boolean).forEach(value=>{const span=document.createElement("span");span.textContent=value;facts.append(span);});
     $("eventSummary").append(facts);
+    $("causeName").textContent=e.causeName||(lang==="fr"?"Cause indisponible":"Cause unavailable");
     const button=$("joinForm").querySelector("button[type=submit]");
-    if(e.registrationOpen===false||Number(e.spotsLeft)===0){show(messages[lang].full,"error");button.disabled=true;} else if(!pendingRequest){button.disabled=false;}
+    if(e.registrationOpen===false||Number(e.spotsLeft)===0){show(messages[lang].full,"error");button.disabled=true;} else if(!pendingRequest){button.disabled=!e.causeId;}
   }
 
   function wixParentOrigin(){
@@ -72,7 +73,7 @@
 
   async function submit(event){
     event.preventDefault();
-    const cause=$("causeInput").value.trim(); if(!cause)return;
+    if(!eventData?.causeId){show(messages[lang].invalidCause,"error");return;}
     if(!competitionId){show(messages[lang].error,"error");return;}
     const parentOrigin=wixParentOrigin();
     if(!parentOrigin){show(messages[lang].signIn);return;}
@@ -95,7 +96,7 @@
       source:"jpdb-calendar",
       type:"JPDB_JOIN_REQUEST",
       requestId,
-      payload:{competitionId,customCauseName:cause}
+      payload:{competitionId}
     },parentOrigin);
   }
 
