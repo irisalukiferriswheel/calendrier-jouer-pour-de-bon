@@ -19,6 +19,11 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
   }
 
   function card(e) {
+    const availability=e.availability&&typeof e.availability==="object"?e.availability:{};
+    const participantsCount=e.participantsCount??availability.participantsCount;
+    const maxParticipants=e.maxParticipants??availability.maxParticipants;
+    const spotsLeft=e.spotsLeft??availability.spotsLeft;
+    const registrationOpen=e.registrationOpen??availability.registrationOpen;
     const a=document.createElement("article"); a.className="event-card";
     const m=document.createElement("div"); m.className="event-main";
     const tm=document.createElement("div"); tm.className="event-time";
@@ -35,11 +40,11 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
     }
 
     const facts=document.createElement("div"); facts.className="event-facts";
-    facts.append(fact(`${Number(e.participantsCount)||0} ${t("players")}`));
-    if(e.maxParticipants!==null&&e.maxParticipants!==undefined&&e.spotsLeft!==null&&e.spotsLeft!==undefined){
-      facts.append(fact(`${Math.max(0,Number(e.spotsLeft)||0)} ${t("spotsLeft")}`, Number(e.spotsLeft)===0));
+    facts.append(fact(`${Number(participantsCount)||0} ${t("players")}`));
+    if(maxParticipants!==null&&maxParticipants!==undefined&&spotsLeft!==null&&spotsLeft!==undefined){
+      facts.append(fact(`${Math.max(0,Number(spotsLeft)||0)} ${t("spotsLeft")}`, Number(spotsLeft)===0));
     }
-    facts.append(fact(`${t("ageGroup")}: ${ageLabel(e)}`));
+    facts.append(fact(`${t("ageGroup")}: ${ageLabel({minAge:e.minAge??availability.minAge,maxAge:e.maxAge??availability.maxAge})}`));
     c.append(facts);
 
     let d=null;
@@ -51,7 +56,7 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
 
     if(e.competitionId){
       const actions=document.createElement("div"); actions.className="event-actions";
-      if(e.registrationOpen&&(e.spotsLeft===null||e.spotsLeft===undefined||Number(e.spotsLeft)>0)){
+      if(registrationOpen&&(spotsLeft===null||spotsLeft===undefined||Number(spotsLeft)>0)){
         const join=document.createElement("a"); join.className="join-button";
         if(st.demo){
           const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId),demo:"1",lang:st.lang});
@@ -65,7 +70,7 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
         join.textContent=t("join"); actions.append(join);
       } else {
         const closed=document.createElement("span"); closed.className="join-button disabled";
-        closed.textContent=e.spotsLeft!=null&&Number(e.spotsLeft)===0?t("full"):t("registrationClosed"); actions.append(closed);
+        closed.textContent=spotsLeft!=null&&Number(spotsLeft)===0?t("full"):t("registrationClosed"); actions.append(closed);
       }
       c.append(actions);
     }
