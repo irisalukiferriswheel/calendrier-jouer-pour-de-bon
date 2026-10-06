@@ -1,0 +1,156 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { chromium } = require('playwright');
+const http = require('node:http');
+const fs = require('node:fs');
+const path = require('node:path');
+
+test('calendar search, sample fallback, join boundaries, and mobile layout', async () => {
+  const root = path.resolve(__dirname, '..');
+  const server = http.createServer((req, res) => {
+    const name = new URL(req.url, 'http://localhost').pathname;
+    const file = path.join(root, name.endsWith('/') ? `${name}index.html` : name);
+    if (!file.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
+    fs.readFile(file, (error, data) => {
+      res.writeHead(error ? 404 : 200, { 'Content-Type': file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html' });
+      res.end(error ? '' : data);
+    });
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || 'chrome', headless: true });
+  try {
+    const page = await browser.newPage({timezoneId:'America/Los_Angeles'});
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    let apiCalls = 0;
+    let mode = 'empty';
+    let dateEvents=[];
+    let holdNext=false,releaseHeld;
+    const live = { id:'live-event', competitionId:'live-competition', title:'Live chess', startAt:new Date(Date.now()+86400000).toISOString(), city:'Montréal', games:['Échecs'], registrationOpen:true, spotsLeft:2, maxParticipants:10 };
+    await page.route('https://jouer-pour-de-bon-api.onrender.com/**', route => {
+      apiCalls++;
+      if(mode === 'error') return route.fulfill({status:503,body:'Unavailable'});
+      const url = new URL(route.request().url());
+      const data = url.pathname.endsWith('/filters') ? {cities:['Montréal','Granby'],games:['Échecs']} : mode === 'dates' ? dateEvents : mode === 'live' && !url.searchParams.has('city') ? [live] : [];
+      if(holdNext&&!url.pathname.endsWith('/filters')){
+        holdNext=false;
+        return new Promise(resolve=>{releaseHeld=()=>route.fulfill({json:{data}}).then(resolve);});
+      }
+      return route.fulfill({json:{data}});
+    });
+    await page.goto(base);
+    await page.locator('.event-card').nth(2).waitFor();
+    assert.equal(await page.locator('.event-card').count(),3);
+    assert.equal(await page.locator('.join-button:not(.disabled)').count(),2);
+    assert.match(await page.locator('#connectionNote').innerText(),/démonstration/);
+    await page.locator('[data-lang=en]').click();
+    assert.equal(await page.getByRole('link',{name:'Request to join'}).count(),2);
+    await page.locator('#searchInput').fill('echecs');
+    assert.equal(await page.locator('.event-card').count(),3);
+    await page.locator('#citySelect').selectOption('Granby');
+    await page.locator('#gameSelect').selectOption('Échecs');
+    await page.locator('[data-range=weekend]').click();
+    assert.equal(await page.locator('.event-card').count(),3);
+    await page.locator('[data-range=all]').click();
+    await page.locator('[data-lang=fr]').click();
+    assert.equal(await page.locator('#citySelect').inputValue(),'Granby');
+    assert.equal(await page.locator('#gameSelect').inputValue(),'Échecs');
+    assert.equal(await page.locator('.event-card').count(),3);
+    await page.locator('[data-lang=en]').click();
+    await page.getByRole('button',{name:'Search',exact:true}).click();
+    assert.equal(await page.locator('.event-card').count(),1);
+    await page.locator('#searchInput').fill('does not exist');
+    assert.equal(await page.locator('.event-card').count(),1);
+    await page.locator('#searchInput').press('Enter');
+    assert.equal(await page.locator('.event-card').count(),0);
+    await page.locator('#resetButton').click();
+    await page.locator('#citySelect').selectOption('Sherbrooke');
+    assert.equal(await page.locator('.event-card').count(),3);
+    await page.locator('#searchButton').click();
+    assert.equal(await page.locator('.event-card').count(),1);
+    await page.locator('#resetButton').click();
+    await page.locator('#gameSelect').selectOption('Tetris');
+    assert.equal(await page.locator('.event-card').count(),3);
+    await page.locator('#searchButton').click();
+    assert.equal(await page.locator('.event-card').count(),1);
+    assert.equal(await page.locator('.join-button.disabled').innerText(),'Full');
+    await page.locator('#resetButton').click();
+    await page.setViewportSize({width:375,height:812});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    const callsBeforeDemo = apiCalls;
+    await page.getByRole('link',{name:'Request to join'}).first().click();
+    await page.locator('#causeInput').fill('A sample cause');
+    await page.getByRole('button',{name:'Request to join'}).click();
+    assert.match(await page.locator('#joinMessage').innerText(),/No registration or payment/);
+    assert.equal(apiCalls,callsBeforeDemo);
+    await page.locator('[data-lang=fr]').click();
+    assert.equal(await page.locator('button[type=submit]').isDisabled(),true);
+    await page.goto(`${base}/join/?event=demo-tetris&competition=demo-comp-tetris`);
+    assert.equal(await page.locator('button[type=submit]').isDisabled(),true);
+    mode='live';
+    await page.goto(base);
+    await page.getByRole('link',{name:'Demander à participer'}).waitFor();
+    assert.equal(await page.locator('.event-card').count(),1);
+    assert.equal(await page.locator('#connectionNote').isVisible(),false);
+    assert.equal(await page.locator('.join-button').getAttribute('href'),'https://www.jouerpourdebon.ca/competitions?jpdbEvent=live-event');
+    assert.equal(await page.locator('.join-button').getAttribute('target'),'_top');
+    const callsBeforeFilters=apiCalls;
+    await page.locator('#citySelect').selectOption('Granby');
+    await page.locator('#gameSelect').selectOption('Échecs');
+    await page.locator('#searchInput').fill('chess');
+    await page.locator('[data-range=week]').click();
+    assert.equal(await page.locator('.event-card').count(),1);
+    assert.equal(apiCalls,callsBeforeFilters);
+    const searchRequest=page.waitForRequest(request=>request.url().includes('/v1/events/search?'));
+    await page.locator('#searchButton').click();
+    const submitted=new URL((await searchRequest).url());
+    assert.equal(submitted.searchParams.get('city'),'Granby');
+    assert.equal(submitted.searchParams.get('game'),'Échecs');
+    await page.waitForFunction(()=>document.querySelector('#message').textContent.includes('Aucune'));
+    assert.equal(await page.locator('.event-card').count(),0);
+    assert.equal(apiCalls,callsBeforeFilters+1);
+    mode='error';
+    await page.goto(base);
+    await page.locator('.event-card').nth(2).waitFor();
+    assert.match(await page.locator('#message').innerText(),/indisponibles/);
+    // Calendar boundaries must use Montreal, even when the visitor is in LA.
+    await page.clock.setFixedTime(new Date('2026-09-28T02:00:00Z'));
+    mode='dates';
+    dateEvents=[
+      {...live,id:'sunday',title:'Sunday late',startAt:'2026-09-28T03:30:00Z'},
+      {...live,id:'monday',title:'Monday early',startAt:'2026-09-28T04:30:00Z'},
+      {...live,id:'past',title:'Saturday past',startAt:'2026-09-27T01:00:00Z'}
+    ];
+    await page.goto(base);
+    await page.locator('.event-card').nth(2).waitFor();
+    await page.locator('[data-range=week]').click();
+    assert.equal(await page.locator('.event-card').count(),3);
+    await page.locator('#searchButton').click();
+    await page.locator('.event-card').first().waitFor();
+    assert.deepEqual(await page.locator('.event-title').allTextContents(),['Sunday late']);
+    await page.locator('[data-range=weekend]').click();
+    await page.locator('#searchButton').click();
+    await page.locator('.event-card').first().waitFor();
+    assert.deepEqual(await page.locator('.event-title').allTextContents(),['Sunday late']);
+    holdNext=true;
+    const beforeSlow=apiCalls;
+    const slowRequest=page.waitForRequest(request=>request.url().includes('/v1/events/search?'));
+    await page.locator('#searchButton').click();
+    await slowRequest;
+    assert.equal(await page.locator('#searchButton').isDisabled(),true);
+    assert.equal(await page.locator('#resetButton').isDisabled(),true);
+    await page.locator('[data-range=all]').click();
+    await page.locator('[data-lang=en]').click();
+    await page.locator('#searchForm').evaluate(form=>form.requestSubmit());
+    assert.equal(apiCalls,beforeSlow+1);
+    await releaseHeld();
+    await page.locator('.event-card').first().waitFor();
+    assert.deepEqual(await page.locator('.event-title').allTextContents(),['Sunday late']);
+    assert.equal(await page.locator('#searchButton').isDisabled(),false);
+    await page.locator('#searchButton').click();
+    await page.locator('.event-card').nth(2).waitFor();
+    assert.equal(apiCalls,beforeSlow+2);
+    assert.deepEqual(errors,[]);
+  } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+});

@@ -13,7 +13,8 @@ window.JPDB_CALENDAR_I18N = {
     manyResults: "{count} activités trouvées", demoMode: "Aperçu avec données de démonstration",
     players: "joueurs inscrits", spotsLeft: "places restantes", ageGroup: "Âge",
     allAges: "Tous âges", agePlus: "{min} ans et +", ageUpTo: "Jusqu’à {max} ans", ageRange: "{min}–{max} ans",
-    join: "Participer", full: "Complet", registrationClosed: "Inscriptions fermées"
+    demoUnavailable: "Les activités réelles sont temporairement indisponibles. Voici des exemples fictifs.",
+    join: "Demander à participer", full: "Complet", registrationClosed: "Inscriptions fermées"
   },
   en: {
     eyebrow: "Playing for Good", title: "Calendar",
@@ -28,6 +29,7 @@ window.JPDB_CALENDAR_I18N = {
     manyResults: "{count} activities found", demoMode: "Preview using demo data",
     players: "players joined", spotsLeft: "spots left", ageGroup: "Age",
     allAges: "All ages", agePlus: "Ages {min}+", ageUpTo: "Up to age {max}", ageRange: "Ages {min}–{max}",
-    join: "Join", full: "Full", registrationClosed: "Registration closed"
+    demoUnavailable: "Live activities are temporarily unavailable. These are sample events.",
+    join: "Request to join", full: "Full", registrationClosed: "Registration closed"
   }
 };

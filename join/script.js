@@ -6,7 +6,8 @@
   const DEFAULT_API="https://jouer-pour-de-bon-api.onrender.com";
   const api=(q.get("api")||DEFAULT_API).replace(/\/$/,"");
   const ALLOWED_WIX_ORIGINS=new Set(["https://www.jouerpourdebon.ca","https://jouerpourdebon.ca"]);
-  let lang=localStorage.getItem("jpdb-calendar-language")||"fr";
+  let lang=q.get("lang")||localStorage.getItem("jpdb-calendar-language")||"fr";
+  let demoRequested=false;
   let pendingRequest=null;
   const $=id=>document.getElementById(id);
   const messages={
@@ -18,7 +19,14 @@
     "demo-chess":{title:"Soirée d’échecs",city:"Granby",venue:"Bibliothèque municipale",participantsCount:15,spotsLeft:1,registrationOpen:true,minAge:12,maxAge:null,feeAmount:10,feeCurrency:"CAD"},
     "demo-tetris":{title:"Tournoi Tetris",city:"Montréal",venue:"Maison de quartier",participantsCount:20,spotsLeft:0,registrationOpen:false,minAge:null,maxAge:null,feeAmount:15,feeCurrency:"CAD"}
   };
-  let eventData=demo[eventId]||null;
+  const isDemo=Object.hasOwn(demo,eventId);
+  let eventData=isDemo?demo[eventId]:null;
+  messages.fr.joinButton="Demander à participer";
+  messages.en.joinButton="Request to join";
+  messages.fr.demo="Événement fictif : vous pouvez essayer une demande, sans inscription ni paiement réel.";
+  messages.en.demo="Sample event: try a request without a real registration or payment.";
+  messages.fr.demoSuccess="Demande simulée ! Aucune inscription ni aucun paiement n’a été créé.";
+  messages.en.demoSuccess="Demo request completed! No registration or payment was created.";
 
   init();
 
@@ -27,7 +35,7 @@
     $("joinForm").addEventListener("submit",submit);
     window.addEventListener("message",receiveWixResult);
     applyLang();
-    if(api&&eventId){
+    if(api&&eventId&&!isDemo){
       try{
         const response=await fetch(`${api}/v1/calendar/events/${encodeURIComponent(eventId)}`,{headers:{Accept:"application/json"}});
         if(response.ok){const json=await response.json();eventData=json.data||eventData;}
@@ -41,6 +49,7 @@
     document.title=lang==="fr"?"Participer — Jouer pour de bon":"Join — Playing for Good";
     document.querySelectorAll("[data-i18n]").forEach(node=>{const value=messages[lang][node.dataset.i18n];if(value)node.textContent=value;});
     document.querySelectorAll("[data-lang]").forEach(button=>button.classList.toggle("active",button.dataset.lang===lang));
+    if(isDemo)document.querySelector('[data-i18n="accountNote"]').textContent=messages[lang].demo;
   }
 
   function renderSummary(){
@@ -58,7 +67,11 @@
     ].filter(Boolean).forEach(value=>{const span=document.createElement("span");span.textContent=value;facts.append(span);});
     $("eventSummary").append(facts);
     const button=$("joinForm").querySelector("button[type=submit]");
-    if(e.registrationOpen===false||Number(e.spotsLeft)===0){show(messages[lang].full,"error");button.disabled=true;} else if(!pendingRequest){button.disabled=false;}
+    if(!eventData){show(messages[lang].notFound,"error");button.disabled=true;}
+    else if(e.spotsLeft!=null&&Number(e.spotsLeft)===0){show(messages[lang].full,"error");button.disabled=true;}
+    else if(e.registrationOpen!==true){show(messages[lang].closed,"error");button.disabled=true;}
+    else if(demoRequested){show(messages[lang].demoSuccess,"success");button.disabled=true;}
+    else if(!pendingRequest){button.disabled=false;}
   }
 
   function wixParentOrigin(){
@@ -72,7 +85,9 @@
 
   async function submit(event){
     event.preventDefault();
+    if(!eventData||eventData.registrationOpen!==true||(eventData.spotsLeft!=null&&Number(eventData.spotsLeft)<=0)||demoRequested)return;
     const cause=$("causeInput").value.trim(); if(!cause)return;
+    if(isDemo){demoRequested=true;renderSummary();return;}
     if(!competitionId){show(messages[lang].error,"error");return;}
     const parentOrigin=wixParentOrigin();
     if(!parentOrigin){show(messages[lang].signIn);return;}
