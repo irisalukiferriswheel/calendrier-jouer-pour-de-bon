@@ -57,9 +57,14 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
       const actions=document.createElement("div"); actions.className="event-actions";
       if(registrationOpen&&(spotsLeft===null||spotsLeft===undefined||Number(spotsLeft)>0)){
         const join=document.createElement("a"); join.className="join-button";
-        const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId)});
-        if(cfg.api)params.set("api",cfg.api);
-        join.href=`join/?${params.toString()}`;
+        if(st.demo){
+          const params=new URLSearchParams({event:String(e.id),competition:String(e.competitionId),demo:"1",lang:st.lang});
+          join.href=`join/?${params.toString()}`;
+        }else{
+          const params=new URLSearchParams({jpdbEvent:String(e.id)});
+          join.href=`https://www.jouerpourdebon.ca/competitions?${params.toString()}`;
+          join.target="_top";
+        }
         join.textContent=t("join"); actions.append(join);
       } else {
         const closed=document.createElement("span"); closed.className="join-button disabled";

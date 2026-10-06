@@ -98,6 +98,22 @@ test("renders a join link from nested API availability", () => {
   assert.ok(join);
   assert.equal(join.tagName, "a");
   assert.equal(join.textContent, "Join");
-  assert.match(join.href, /competition=competition-1/);
+  assert.equal(join.href, "https://www.jouerpourdebon.ca/competitions?jpdbEvent=event-1");
+  assert.equal(join.target, "_top");
   assert.ok(nodes.some(node => node.textContent === "20 spots left"));
+
+  st.events[0].availability.spotsLeft=0;
+  renderer.render();
+  assert.equal(descendants(events).some(node=>node.tagName==="a"),false);
+  st.events[0].availability.spotsLeft=20;
+  st.events[0].availability.registrationOpen=false;
+  renderer.render();
+  assert.equal(descendants(events).some(node=>node.tagName==="a"),false);
+  st.events[0].availability.registrationOpen=true;
+  st.demo=true;
+  renderer.render();
+  const demoJoin=descendants(events).find(node=>node.className==="join-button");
+  assert.match(demoJoin.href,/^join\/\?/);
+  assert.match(demoJoin.href,/demo=1/);
+  assert.equal(demoJoin.target,undefined);
 });
