@@ -95,3 +95,12 @@ The browser regression test uses Node.js and Playwright with installed Google Ch
 ## Deployment
 
 This repository is published with GitHub Pages and can be embedded in Wix as an external website/HTML frame.
+# Event opening extension (local, October 17)
+
+Event titles link to the same canonical Wix event route as signup, with `_top`
+navigation out of the embed. Full/closed events remain openable for details while
+their join action stays disabled. Samples stay local demonstrations. This extends
+coordinated calendar PR #4 and requires its API/Wix/player-registration companions;
+it has not been deployed. `node --test render.test.js` and the Playwright calendar
+regression verify these boundaries. See shared API `docs/EVENT_TOURNAMENT.md` for
+the coordinated release, migration and staging gates.

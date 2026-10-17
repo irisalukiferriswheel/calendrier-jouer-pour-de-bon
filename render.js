@@ -29,7 +29,15 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
     const tm=document.createElement("div"); tm.className="event-time";
     tm.innerHTML=`<strong>${esc(time(e.startAt,e.timezone))}</strong><span>${esc(e.endAt?time(e.endAt,e.timezone):"")}</span>`;
     const c=document.createElement("div"); c.className="event-content";
-    const h=document.createElement("h3"); h.className="event-title"; h.textContent=e.title||""; c.append(h);
+    const h=document.createElement("h3"); h.className="event-title";
+    // Opening details remains available even when joining is full or closed.
+    // Top-level navigation preserves the authenticated Wix member boundary.
+    if(!st.demo&&e.competitionId){
+      const detail=document.createElement("a");detail.textContent=e.title||t("details");
+      detail.href=`https://www.jouerpourdebon.ca/competitions?${new URLSearchParams({jpdbEvent:String(e.id)})}`;
+      detail.target="_top";h.append(detail);
+    }else h.textContent=e.title||"";
+    c.append(h);
     const meta=document.createElement("div"); meta.className="event-meta";
     meta.textContent=[e.venue,e.city].filter(Boolean).join(" · ")||t("locationFallback"); c.append(meta);
 

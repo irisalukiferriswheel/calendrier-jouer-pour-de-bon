@@ -93,13 +93,15 @@ test("uses nested availability and the canonical Wix registration route", () => 
   st.events[0].availability.spotsLeft = 0;
   renderer.render();
   nodes = descendants(events);
-  assert.equal(nodes.some(node => node.tagName === "a"), false);
+  assert.equal(nodes.some(node => node.tagName === "a" && node.className === "join-button"), false);
+  assert.ok(nodes.some(node => node.tagName === "a" && node.target === "_top" && node.href.includes("jpdbEvent=event-1")));
   assert.ok(nodes.some(node => node.textContent === "full"));
   st.events[0].availability.spotsLeft = null;
   st.events[0].availability.registrationOpen = false;
   renderer.render();
   nodes = descendants(events);
-  assert.equal(nodes.some(node => node.tagName === "a"), false);
+  assert.equal(nodes.some(node => node.tagName === "a" && node.className === "join-button"), false);
+  assert.ok(nodes.some(node => node.tagName === "a" && node.target === "_top" && node.href.includes("jpdbEvent=event-1")));
   assert.ok(nodes.some(node => node.textContent === "registrationClosed"));
   st.events[0].availability.spotsLeft = 20;
   st.events[0].availability.registrationOpen = true;
