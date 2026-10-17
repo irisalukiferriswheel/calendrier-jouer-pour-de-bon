@@ -33,6 +33,7 @@ test("uses nested availability and the canonical Wix registration route", () => 
 
   const events = new FakeElement("div");
   const st = {
+    lang: "en",
     loading: false,
     demo: false,
     loadFailed: false,
@@ -86,7 +87,7 @@ test("uses nested availability and the canonical Wix registration route", () => 
   renderer.render();
   let nodes = descendants(events);
   const join = nodes.find(node => node.className === "join-button");
-  assert.equal(join.href, "https://www.jouerpourdebon.ca/competitions?jpdbEvent=event-1");
+  assert.equal(join.href, "https://www.jouerpourdebon.ca/competitions?jpdbEvent=event-1&lang=en");
   assert.equal(join.target, "_top");
   assert.ok(nodes.some(node => node.textContent === "20 spots left"));
 

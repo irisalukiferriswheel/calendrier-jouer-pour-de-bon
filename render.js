@@ -34,7 +34,7 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
     // Top-level navigation preserves the authenticated Wix member boundary.
     if(!st.demo&&e.competitionId){
       const detail=document.createElement("a");detail.textContent=e.title||t("details");
-      detail.href=`https://www.jouerpourdebon.ca/competitions?${new URLSearchParams({jpdbEvent:String(e.id)})}`;
+      detail.href=`https://www.jouerpourdebon.ca/competitions?${new URLSearchParams({jpdbEvent:String(e.id),lang:st.lang})}`;
       detail.target="_top";h.append(detail);
     }else h.textContent=e.title||"";
     c.append(h);
@@ -71,7 +71,7 @@ window.JPDBCalendarRender = function ({ st, el, t, norm, cfg }) {
           join.href=`join/?${params.toString()}`;
         }else{
           // Leave the calendar iframe so Wix can establish the member session.
-          const params=new URLSearchParams({jpdbEvent:String(e.id)});
+          const params=new URLSearchParams({jpdbEvent:String(e.id),lang:st.lang});
           join.href=`https://www.jouerpourdebon.ca/competitions?${params.toString()}`;
           join.target="_top";
         }

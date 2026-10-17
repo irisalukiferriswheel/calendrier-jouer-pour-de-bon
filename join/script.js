@@ -6,7 +6,9 @@
   const DEFAULT_API="https://jouer-pour-de-bon-api.onrender.com";
   const api=(q.get("api")||DEFAULT_API).replace(/\/$/,"");
   const ALLOWED_WIX_ORIGINS=new Set(["https://www.jouerpourdebon.ca","https://jouerpourdebon.ca"]);
-  let lang=q.get("lang")||localStorage.getItem("jpdb-calendar-language")||"fr";
+  let lang=q.get("lang")||"fr";
+  try {lang=q.get("lang")||localStorage.getItem("jpdb-calendar-language")||"fr";}catch{}
+  let siteLanguageController;
   let demoRequested=false;
   let pendingRequest=null;
   const $=id=>document.getElementById(id);
@@ -31,7 +33,7 @@
   init();
 
   async function init(){
-    document.querySelectorAll("[data-lang]").forEach(button=>button.onclick=()=>{lang=button.dataset.lang;localStorage.setItem("jpdb-calendar-language",lang);applyLang();renderSummary();});
+    document.querySelectorAll("[data-lang]").forEach(button=>button.onclick=()=>{siteLanguageController?.choose(button.dataset.lang);});
     $("joinForm").addEventListener("submit",submit);
     window.addEventListener("message",receiveWixResult);
     applyLang();
@@ -48,7 +50,7 @@
     if(!messages[lang])lang="fr"; document.documentElement.lang=lang;
     document.title=lang==="fr"?"Participer — Jouer pour de bon":"Join — Playing for Good";
     document.querySelectorAll("[data-i18n]").forEach(node=>{const value=messages[lang][node.dataset.i18n];if(value)node.textContent=value;});
-    document.querySelectorAll("[data-lang]").forEach(button=>button.classList.toggle("active",button.dataset.lang===lang));
+    document.querySelectorAll("[data-lang]").forEach(button=>{button.classList.toggle("active",button.dataset.lang===lang);button.setAttribute("aria-pressed",String(button.dataset.lang===lang));});
     if(isDemo)document.querySelector('[data-i18n="accountNote"]').textContent=messages[lang].demo;
   }
 
@@ -167,4 +169,5 @@
   }
 
   function show(text,type=""){$("joinMessage").hidden=false;$("joinMessage").className=`message ${type}`.trim();$("joinMessage").textContent=text;}
+  import('../jpdbLocalization.js').then(({createLanguageController})=>{siteLanguageController=createLanguageController(window,code=>{const message=$('joinMessage');const old=messages[lang];const key=Object.keys(old).find(key=>old[key]===message.textContent);lang=code;applyLang();renderSummary();if(key)message.textContent=messages[lang][key];},'jpdb-calendar-language');});
 })();

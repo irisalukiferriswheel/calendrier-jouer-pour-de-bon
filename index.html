@@ -16,13 +16,13 @@
           <h1 id="calendarTitle" data-i18n="title">Calendrier</h1>
           <p class="intro" data-i18n="intro">Trouvez les jeux et activités à venir près de chez vous.</p>
         </div>
-        <div class="language-toggle" aria-label="Language / Langue">
-          <button class="language-button active" type="button" data-lang="fr" aria-pressed="true">FR</button>
-          <button class="language-button" type="button" data-lang="en" aria-pressed="false">EN</button>
+        <div class="language-toggle" role="group" data-i18n-aria-label="languageLabel" aria-label="Langue">
+          <button class="language-button active" type="button" data-lang="fr" aria-pressed="true" lang="fr">Français</button>
+          <button class="language-button" type="button" data-lang="en" aria-pressed="false" lang="en">English</button>
         </div>
       </div>
 
-      <form id="searchForm" class="controls" role="search" aria-label="Calendar filters / Filtres du calendrier">
+      <form id="searchForm" class="controls" role="search" data-i18n-aria-label="filtersLabel" aria-label="Filtres du calendrier">
         <div class="search-row">
           <div class="field">
             <label for="searchInput" data-i18n="searchLabel">Rechercher</label>
@@ -40,7 +40,7 @@
 
         <div class="date-row">
           <button id="searchButton" class="search-button" type="submit" data-i18n="searchLabel">Rechercher</button>
-          <div class="date-filters" role="group" aria-label="Date range / Période">
+          <div class="date-filters" role="group" data-i18n-aria-label="rangeLabel" aria-label="Période">
             <button class="filter-chip active" type="button" data-range="all" data-i18n="allDates" aria-pressed="true">Toutes les dates</button>
             <button class="filter-chip" type="button" data-range="week" data-i18n="thisWeek" aria-pressed="false">Cette semaine</button>
             <button class="filter-chip" type="button" data-range="weekend" data-i18n="thisWeekend" aria-pressed="false">Ce week-end</button>
@@ -62,6 +62,6 @@
   <script src="i18n.js?v=20260921-001"></script>
   <script src="demo.js?v=20260921-001"></script>
   <script src="render.js?v=20260921-001"></script>
-  <script src="script.js?v=20260921-001"></script>
+  <script type="module" src="script.js?v=20260921-001"></script>
 </body>
 </html>

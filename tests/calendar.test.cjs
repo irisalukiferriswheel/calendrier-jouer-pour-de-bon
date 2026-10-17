@@ -19,7 +19,8 @@ test('calendar search, sample fallback, join boundaries, and mobile layout', asy
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || 'chrome', headless: true });
   try {
-    const page = await browser.newPage({timezoneId:'America/Los_Angeles'});
+    const page = await browser.newPage({timezoneId:'America/Los_Angeles',locale:'fr-CA'});
+    page.on('dialog',dialog=>dialog.type()==='beforeunload'?dialog.accept():dialog.dismiss());
     const base = `http://127.0.0.1:${server.address().port}`;
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -93,7 +94,7 @@ test('calendar search, sample fallback, join boundaries, and mobile layout', asy
     await page.getByRole('link',{name:'Demander à participer'}).waitFor();
     assert.equal(await page.locator('.event-card').count(),1);
     assert.equal(await page.locator('#connectionNote').isVisible(),false);
-    assert.equal(await page.locator('.join-button').getAttribute('href'),'https://www.jouerpourdebon.ca/competitions?jpdbEvent=live-event');
+    assert.equal(await page.locator('.join-button').getAttribute('href'),'https://www.jouerpourdebon.ca/competitions?jpdbEvent=live-event&lang=fr');
     assert.equal(await page.locator('.join-button').getAttribute('target'),'_top');
     const callsBeforeFilters=apiCalls;
     await page.locator('#citySelect').selectOption('Granby');
