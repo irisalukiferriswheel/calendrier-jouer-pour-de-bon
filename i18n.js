@@ -1,5 +1,6 @@
 window.JPDB_CALENDAR_I18N = {
   fr: {
+    languageLabel: "Langue", filtersLabel: "Filtres du calendrier", rangeLabel: "Période",
     eyebrow: "Jouer pour de bon", title: "Calendrier",
     intro: "Trouvez les jeux et activités à venir près de chez vous.",
     searchLabel: "Rechercher", searchPlaceholder: "Jeu, activité ou lieu…",
@@ -16,6 +17,7 @@ window.JPDB_CALENDAR_I18N = {
     join: "Participer", full: "Complet", registrationClosed: "Inscriptions fermées"
   },
   en: {
+    languageLabel: "Language", filtersLabel: "Calendar filters", rangeLabel: "Date range",
     eyebrow: "Playing for Good", title: "Calendar",
     intro: "Find upcoming games and activities near you.",
     searchLabel: "Search", searchPlaceholder: "Game, activity or place…",

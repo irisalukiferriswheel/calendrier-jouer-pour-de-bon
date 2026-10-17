@@ -1,16 +1,19 @@
+import { resolveLanguage, readChoice, saveChoice, applyDocument, connectEmbed, translate } from "./jpdbLocalization.js";
 (() => {
   "use strict";
   const q=new URLSearchParams(location.search);
   const DEFAULT_API="https://jouer-pour-de-bon-api.onrender.com";
   const cfg={api:(q.get("demo")==="1"?"":(q.get("api")||DEFAULT_API)).replace(/\/$/,""),tz:"America/Montreal",lang:q.get("lang")==="en"?"en":"fr"};
   const tr=window.JPDB_CALENDAR_I18N;
-  const st={lang:localStorage.getItem("jpdb-calendar-language")||cfg.lang,city:"",game:"",range:"all",search:"",filters:{cities:[],games:[]},events:[],loading:false,demo:!cfg.api,pagination:null};
+  const st={lang:resolveLanguage({url:q.get("lang"),stored:readChoice(safeStorage()),browser:navigator.languages}),city:"",game:"",range:"all",search:"",filters:{cities:[],games:[]},events:[],loading:false,demo:!cfg.api,pagination:null};
   const $=id=>document.getElementById(id);
   const el={langs:[...document.querySelectorAll("[data-lang]")],ranges:[...document.querySelectorAll("[data-range]")],city:$("citySelect"),game:$("gameSelect"),search:$("searchInput"),reset:$("resetButton"),count:$("resultCount"),events:$("events"),msg:$("message"),note:$("connectionNote")};
-  const t=k=>tr[st.lang]?.[k]||tr.fr[k]||k;
+  const t=k=>translate(tr,st.lang,k);
+  function safeStorage(){try{return window.localStorage;}catch{return null;}}
   const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase();
   const view=window.JPDBCalendarRender({st,el,t,norm,cfg});
 
+  const bridge=connectEmbed({window,origins:["https://www.jouerpourdebon.ca","https://jouerpourdebon.ca"],onLanguage(code){st.lang=code; applyLang(); fillSelects(); view.render();}});
   init();
 
   async function init(){
@@ -23,7 +26,7 @@
   }
 
   function bind(){
-    el.langs.forEach(b=>b.onclick=()=>{ st.lang=b.dataset.lang; localStorage.setItem("jpdb-calendar-language",st.lang); applyLang(); fillSelects(); view.render(); });
+    el.langs.forEach(b=>b.onclick=()=>{ st.lang=b.dataset.lang; saveChoice(safeStorage(),st.lang); bridge.choose(st.lang); applyLang(); fillSelects(); view.render(); });
     el.city.onchange=async()=>{ st.city=el.city.value; await refresh(); view.render(); };
     el.game.onchange=async()=>{ st.game=el.game.value; await refresh(); view.render(); };
     el.search.oninput=()=>{ st.search=el.search.value.trim(); view.render(); };
@@ -61,10 +64,11 @@
   function option(node,label,value){ const o=document.createElement("option"); o.textContent=label; o.value=value; node.append(o); }
 
   function applyLang(){
-    if(!tr[st.lang])st.lang="fr"; document.documentElement.lang=st.lang;
+    if(!tr[st.lang])st.lang="fr"; applyDocument(document,st.lang);
     document.title=st.lang==="fr"?"Calendrier — Jouer pour de bon":"Calendar — Playing for Good";
     document.querySelectorAll("[data-i18n]").forEach(x=>{const k=x.dataset.i18n;if(tr[st.lang][k])x.textContent=tr[st.lang][k]});
     document.querySelectorAll("[data-i18n-placeholder]").forEach(x=>{const k=x.dataset.i18nPlaceholder;if(tr[st.lang][k])x.placeholder=tr[st.lang][k]});
+    document.querySelectorAll("[data-i18n-aria-label]").forEach(x=>x.setAttribute("aria-label",t(x.dataset.i18nAriaLabel)));
     el.langs.forEach(b=>{const on=b.dataset.lang===st.lang;b.classList.toggle("active",on);b.setAttribute("aria-pressed",String(on))});
   }
 
