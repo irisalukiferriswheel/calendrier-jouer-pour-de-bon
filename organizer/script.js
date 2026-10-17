@@ -45,7 +45,9 @@
     }
   };
 
-  let lang = localStorage.getItem("jpdb-organizer-language") || "fr";
+  let lang="fr";
+  try{lang=localStorage.getItem("jpdb-organizer-language")||"fr";}catch{}
+  let siteLanguageController;
   const $ = id => document.getElementById(id);
   const form = $("organizerForm");
   const ageGroup = $("ageGroupSelect");
@@ -75,9 +77,7 @@
 
     document.querySelectorAll("[data-lang]").forEach(button => {
       button.addEventListener("click", () => {
-        lang = button.dataset.lang;
-        localStorage.setItem("jpdb-organizer-language", lang);
-        applyLanguage();
+        siteLanguageController?.choose(button.dataset.lang);
       });
     });
 
@@ -105,6 +105,7 @@
     });
     document.querySelectorAll("[data-lang]").forEach(button => {
       button.classList.toggle("active", button.dataset.lang === lang);
+      button.setAttribute("aria-pressed",String(button.dataset.lang === lang));
     });
     if (createButton) createButton.textContent = t("createButton");
     if (calendarLink) calendarLink.textContent = t("openCalendar");
@@ -336,4 +337,5 @@
   function t(key) { return I18N[lang]?.[key] || I18N.fr[key] || key; }
   function showError(message) { errorBox.textContent=message; errorBox.hidden=false; errorBox.scrollIntoView({behavior:"smooth",block:"nearest"}); }
   function hideError() { errorBox.hidden=true; errorBox.textContent=""; }
+  import('../jpdbLocalization.js').then(({createLanguageController})=>{siteLanguageController=createLanguageController(window,code=>{const key=Object.keys(I18N[lang]).find(key=>I18N[lang][key]===errorBox.textContent);lang=code;applyLanguage();if(key)errorBox.textContent=I18N[lang][key];},'jpdb-organizer-language');});
 })();

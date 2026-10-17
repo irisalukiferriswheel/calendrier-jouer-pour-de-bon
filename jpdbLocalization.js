@@ -65,6 +65,10 @@ export function formatMoney(amount, currency, code) {
 }
 export function connectEmbed({ window, origins, onLanguage }) {
   let hostOrigin = null;
+  const clientId = window.crypto?.randomUUID?.() || `client-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let session = null;
+  let revision = -1;
+  let pendingChoice = null;
   const embedded = window.parent !== window;
   const send = data => {
     if (!embedded) return;
@@ -72,12 +76,22 @@ export function connectEmbed({ window, origins, onLanguage }) {
   };
   const receive = event => {
     if (!embedded || event.source !== window.parent || !origins.includes(event.origin)) return;
-    if (!isPacket(event.data, 'set') || !language(event.data.language)) return;
+    const data = event.data;
+    if (!isPacket(data, 'set') || !language(data.language) || data.clientId !== clientId) return;
+    if (typeof data.session !== 'string' || !data.session || !Number.isSafeInteger(data.revision) || data.revision < 0) return;
+    if ((session && data.session !== session) || data.revision <= revision) return;
+    session = data.session;
+    revision = data.revision;
     hostOrigin = event.origin;
-    onLanguage(language(event.data.language));
+    onLanguage(language(data.language), { siteLanguage: language(data.siteLanguage), explicit: data.explicit === true });
+    if (pendingChoice) {
+      const code = pendingChoice;
+      pendingChoice = null;
+      send({ ...packet('choose', code), clientId, session, revision });
+    }
   };
   window.addEventListener('message', receive);
-  const ready = () => send(packet('ready'));
+  const ready = () => send({ ...packet('ready'), clientId });
   if (window.document.readyState === 'complete') ready();
   else window.addEventListener('load', ready, { once: true });
   // Bounded retry covers host onReady racing the iframe load event.
@@ -87,7 +101,13 @@ export function connectEmbed({ window, origins, onLanguage }) {
     else ready();
   }, 500);
   return {
-    choose(value) { if (language(value)) send(packet('choose', value)); },
+    choose(value) {
+      const code = language(value);
+      if (!code) return;
+      if (!session) { pendingChoice = code; return; }
+      send({ ...packet('choose', code), clientId, session, revision });
+    },
+    reload(value) { if (session && language(value)) send({ ...packet('reload', value), clientId, session, revision, confirmed: true }); },
     destroy() { window.clearInterval(timer); window.removeEventListener('message', receive); window.removeEventListener('load', ready); }
   };
 }
@@ -100,9 +120,53 @@ export function initialLanguage(window, legacyKey) {
 export function createLanguageController(window, onChange, legacyKey) {
   let storage;
   try { storage = window.localStorage; } catch { /* Third-party storage can be blocked. */ }
-  const apply = code => { applyDocument(window.document, code); onChange(code); };
+  let current = initialLanguage(window, legacyKey);
+  let nativeLanguage = null;
+  let dirty = false;
+  let notice;
+  const updateNotice = () => {
+    if (!notice) return;
+    notice.hidden = !nativeLanguage || current === nativeLanguage;
+    notice.querySelector('span').textContent = current === 'fr'
+      ? 'Les pages intégrées sont en français. Appliquer la langue au site recharge la page.'
+      : 'Embedded pages are in English. Applying the language to the full site reloads the page.';
+    notice.querySelector('button').textContent = current === 'fr' ? 'Appliquer au site…' : 'Apply to full site…';
+  };
+  const apply = (code, meta = {}) => {
+    current = code;
+    if (meta.siteLanguage) nativeLanguage = meta.siteLanguage;
+    if (meta.explicit) saveChoice(storage, code);
+    applyDocument(window.document, code);
+    onChange(code);
+    updateNotice();
+  };
   const bridge = connectEmbed({ window, origins: ['https://www.jouerpourdebon.ca', 'https://jouerpourdebon.ca'], onLanguage: apply });
-  apply(initialLanguage(window, legacyKey));
+  if (typeof window.document.createElement === 'function') {
+    notice = window.document.createElement('aside');
+    notice.dataset.jpdbLanguageControl = '';
+    notice.style.cssText = 'padding:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:inherit;background:#f2f5f3;color:#163f36';
+    // Explicit hidden CSS is needed because display:flex overrides the UA hidden rule.
+    notice.style.removeProperty('display');
+    notice.hidden = true;
+    notice.append(window.document.createElement('span'), window.document.createElement('button'));
+    const button = notice.querySelector('button');
+    button.type = 'button';
+    button.addEventListener('click', () => {
+      const warning = current === 'fr'
+        ? 'Changer la langue du site recharge cette page. Les modifications non enregistrées dans toutes les pages intégrées seront perdues. Continuer ?'
+        : 'Changing the site language reloads this page. Unsaved changes in any embedded form will be lost. Continue?';
+      if (window.confirm(warning)) bridge.reload(current);
+    });
+    window.document.body.prepend(notice);
+  }
+  const markDirty = event => {
+    if (event.target?.closest?.('form') && !event.target.closest('[data-jpdb-language-control]')) dirty = true;
+  };
+  const beforeUnload = event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
+  window.addEventListener('input', markDirty);
+  window.addEventListener('change', markDirty);
+  window.addEventListener('beforeunload', beforeUnload);
+  apply(current);
   return {
     choose(value) {
       const code = language(value);
@@ -111,6 +175,13 @@ export function createLanguageController(window, onChange, legacyKey) {
       apply(code);
       bridge.choose(code);
     },
-    destroy: bridge.destroy
+    markSaved() { dirty = false; },
+    destroy() {
+      bridge.destroy();
+      notice?.remove();
+      window.removeEventListener('input', markDirty);
+      window.removeEventListener('change', markDirty);
+      window.removeEventListener('beforeunload', beforeUnload);
+    }
   };
 }

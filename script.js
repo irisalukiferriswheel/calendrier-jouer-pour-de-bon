@@ -1,4 +1,4 @@
-import { resolveLanguage, readChoice, saveChoice, applyDocument, connectEmbed, translate } from "./jpdbLocalization.js";
+import { resolveLanguage, readChoice, saveChoice, applyDocument, createLanguageController, translate } from "./jpdbLocalization.js";
 (() => {
   "use strict";
   const q=new URLSearchParams(location.search);
@@ -13,7 +13,7 @@ import { resolveLanguage, readChoice, saveChoice, applyDocument, connectEmbed, t
   const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLocaleLowerCase();
   const view=window.JPDBCalendarRender({st,el,t,norm,cfg});
 
-  const bridge=connectEmbed({window,origins:["https://www.jouerpourdebon.ca","https://jouerpourdebon.ca"],onLanguage(code){st.lang=code; applyLang(); fillSelects(); view.render();}});
+  const bridge=createLanguageController(window,code=>{st.lang=code; applyLang(); fillSelects(); view.render();},'jpdb-calendar-language');
   init();
 
   async function init(){
